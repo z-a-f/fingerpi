@@ -8,7 +8,7 @@ from fingerpi.fingerpi_base import checksum as cs
 from fingerpi.fingerpi_base import make_bytearray as mb
 from fingerpi.fingerpi_base import printBytearray
 
-f = fp.FingerPi(port = None)
-f.sendCommand(command('Open'), 0)
+f = fp.FingerPi('/dev/ttyAMA0')
+f.sendCommand(command('CmosLed'), 1, 1)
 
 

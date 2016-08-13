@@ -29,7 +29,10 @@ class FingerPi():
 
     def sendCommand(self, command, parameters, verbosity = 0):
         packet = self._make_packet(command, parameters)
-        self.serial.write(packet)
+        print self.serial.write(packet)
+        # self.serial.flush()
+        print list(packet)
+        print list(self.serial.read(12))
         
     def _make_packet(self, command, parameter = None, start_code = None):
         """
