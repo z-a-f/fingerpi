@@ -1,10 +1,30 @@
 
-_BYTE = 1
-_WORD = 2
-_DWORD = 4
+BYTE = 1
+WORD = 2
+DWORD = 4
 
-def _make_bytearray(arr, length = 1, endian = '>', tail_padding = False):
+def printBytearray(ba):
+    assert type(ba) == bytearray
+    res = '[ '
+    for el in ba:
+        add = ''
+        if el > 255:
+            add = '0'
+        el = hex(el)[2:]
+        el = '0x'+add+el
+        
+        res += el + ' '
+    return res + ']'
+        
+def checksum(arr):
+    if type(arr) != bytearray:
+        raise NotImplementedError("Cannot compute checksum of type " + type(arr))
+    return make_bytearray(sum(arr), WORD, '<', True)
+    
+def make_bytearray(arr, length = 1, endian = '>', tail_padding = False):
     """
+    Note:
+    	If the input is a 'bytearray', it is returned as is!
     Args:
         endian:
     	    >: The order will be in the order the input is given
@@ -31,16 +51,22 @@ def _make_bytearray(arr, length = 1, endian = '>', tail_padding = False):
         res = bytearray(map(ord, list(arr)))
     elif type(arr) == tuple or type(arr) == list:
         for el in arr:
-            res.append(_make_bytearray(el, length = 1, endian = '>'))
+            res.append(make_bytearray(el, length = 1, endian = '>'))
+    elif type(arr) == bytearray:
+        return arr
     elif type(arr) == int:
-        res.append(arr / 256)
-        res %= 256
-
+        while arr > 0:
+            res.append(arr % 256)
+            arr = arr / 256
+    else:
+        raise NotImplementedError("Cannot convert " + type(arr))
+    
     # Convert the endianness and the padding:
     if endian == '<':
         res = res[::-1]
-
+    
     pad_len = length - len(res)
+    padding = bytearray(0)
     if pad_len > 0:
         padding = bytearray(pad_len)
 
@@ -49,9 +75,19 @@ def _make_bytearray(arr, length = 1, endian = '>', tail_padding = False):
     else:
         return padding + res
         
-        
-    
-def _fp_command(val):
+def start_codes(val):
+    __start = {
+        'Command': '\x55\xAA',
+        '\x55\xAA': 'Command', 
+        'Data': '\x5A\xA5',
+        '\x5A\xA5': 'Data'
+    }
+
+    if __start.get(val, None) is None:
+        raise NotImplementedError("Command unknown: " + str(val))
+    return __start[val]
+
+def command(val):
     __command = {
         'Open': 0x01,             # Initialization
         'Close': 0x02,            # Termination
@@ -100,7 +136,7 @@ def _fp_command(val):
     else:
         raise TypeError("Input should be of type 'str'")
 
-def __fp_error(val):
+def error(val):
     # Errors are num: value format :)
     __error = {
         0x1001: 'NACK_TIMEOUT', 		# (Obsolete) Capture timeout
@@ -132,7 +168,7 @@ def __fp_error(val):
         return 'Unknown error code: ' + str(val) # Do we need to raise an exception?
         
 
-def _fp_response(val):
+def response(val):
     __response = {
         'Ack': 0x30,
         'Nack': 0x31
@@ -148,4 +184,6 @@ def _fp_response(val):
     #     return __response_val.get(val, None)
     else:
         raise TypeError("Input should be of type 'str'")
+    
+
     

@@ -2,4 +2,13 @@
 
 import fingerpi as fp
 
-f = fp.FingerPi()
+from fingerpi.fingerpi_base import command
+
+from fingerpi.fingerpi_base import checksum as cs
+from fingerpi.fingerpi_base import make_bytearray as mb
+from fingerpi.fingerpi_base import printBytearray
+
+f = fp.FingerPi(port = None)
+f.sendCommand(command('Open'), 0)
+
+
