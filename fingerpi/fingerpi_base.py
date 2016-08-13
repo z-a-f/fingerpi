@@ -19,7 +19,7 @@ def printBytearray(ba):
 def checksum(arr):
     if type(arr) != bytearray:
         raise NotImplementedError("Cannot compute checksum of type " + type(arr))
-    return make_bytearray(sum(arr), WORD, '<', True)
+    return make_bytearray(sum(arr), WORD, '>', True)
     
 def make_bytearray(arr, length = 1, endian = '>', tail_padding = False):
     """

@@ -4,6 +4,8 @@
 import os, sys
 import serial
 
+from enum import Enum
+
 # from .base import * # (_fp_command, _fp_response,  _fp_error)
 import fingerpi_base
 
@@ -17,22 +19,23 @@ class FingerPi():
                  *args, **kwargs
     ):
         ## First check if serial port is openable :)
-        if not os.path.exists(port):
-            raise IOError("Port " + port + " cannot be opened!")
         # super(FingerPi, self).__init__(
         #     port = port, baudrate = baudrate, *args, **kwargs)
-        self.serial = serial.Serial(
-            port = port, baudrate = baudrate, *args, **kwargs)
+        if port is not None:
+            if not os.path.exists(port):
+                raise IOError("Port " + port + " cannot be opened!")
+            self.serial = serial.Serial(
+                port = port, baudrate = baudrate, *args, **kwargs)
         
         self._device_id = fingerpi_base.make_bytearray(
             device_id, fingerpi_base.WORD, '<', True)
 
     def sendCommand(self, command, parameters, verbosity = 0):
         packet = self._make_packet(command, parameters)
-        print self.serial.write(packet)
+        # print self.serial.write(packet)
         # self.serial.flush()
-        print list(packet)
-        print list(self.serial.read(12))
+        print map(hex, list(packet))
+        # print list(self.serial.read(12))
         
     def _make_packet(self, command, parameter = None, start_code = None):
         """
@@ -54,10 +57,10 @@ class FingerPi():
         parameter = fingerpi_base.make_bytearray(
             parameter, fingerpi_base.DWORD, '<', True)
 
-        res = start_code + self._device_id + command + parameter
+        res = start_code + self._device_id + parameter + command
         # print sum(res)
         res += fingerpi_base.checksum(res)
 
         return res
-    
+
     
