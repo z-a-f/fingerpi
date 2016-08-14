@@ -80,8 +80,8 @@ class FingerPi():
                 if 9600 <= baudrate <= 115200:
                     self.serial.baudrate = baudrate
                     resp = self.sendCommand('Open')
-                    # print resp
-                    if resp[0] is not None:
+                    print resp
+                    if resp['Start Code'] is not None:
                         break
             if self.serial.baudrate > 115200:
                 raise RuntimeError("Couldn't find appropriate baud rate!")
