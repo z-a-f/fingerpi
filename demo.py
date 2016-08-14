@@ -3,11 +3,11 @@
 import fingerpi as fp
 
 import time
-from fingerpi.fingerpi_base import command
+# from fingerpi.fingerpi_base import command
 
-from fingerpi.fingerpi_base import checksum as cs
-from fingerpi.fingerpi_base import make_bytearray as mb
-from fingerpi.fingerpi_base import printBytearray
+# from fingerpi.fingerpi_base import checksum as cs
+# from fingerpi.fingerpi_base import make_bytearray as mb
+# from fingerpi.fingerpi_base import printBytearray
 
 f = fp.FingerPi('/dev/ttyAMA0', baudrate = 9600)
 

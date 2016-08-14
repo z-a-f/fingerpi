@@ -1,0 +1,9 @@
+package fingerpi;
+
+message Command {
+    required WORD command_code = 1;
+    required WORD device_id = 2;
+    required DWORD parameter = 3;
+    required WORD command = 4;
+    optional
+}

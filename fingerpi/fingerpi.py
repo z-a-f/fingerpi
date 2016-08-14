@@ -3,43 +3,14 @@
 
 import os, sys
 import serial
-
+from .base import *
 # from .base import * # (_fp_command, _fp_response,  _fp_error)
-import fingerpi_base
+# import fingerpi_base
 
-from fingerpi_base import printBytearray
+# from fingerpi_base import printBytearray
 
 class FingerPi():
-    """
-    Command Packet:
-    OFFSET	ITEM		TYPE	DESCRIPTION
-    ----------------------------------------------------------------
-    0		0x55		BYTE	Command start code 1
-    1		0xAA		BYTE	Command start code 2
-    2		Device ID	WORD	Device ID (default: 0x0001)
-    4		Parameter	DWORD	Input parameter
-    8		Command		WORD	Command code
-    10		Checksum	WORD	Byte addition checksum
-
-    Response Packet:
-    OFFSET	ITEM		TYPE	DESCRIPTION
-    ----------------------------------------------------------------
-    0		0x55		BYTE	Response code 1
-    1		0xAA		BYTE	Response code 2
-    2		Device ID	WORD	Device ID (default: 0x0001)
-    4		Parameter	DWORD	Error code
-    8		Response	WORD	Response (ACK/NACK)
-    10		Checksum	WORD	Byte addition checksum
-
-    Data Packet:
-    OFFSET	ITEM		TYPE	DESCRIPTION
-    ----------------------------------------------------------------
-    0		0x5A		BYTE	Data code 1
-    1		0xA5		BYTE    Data code 2
-    2		Device ID	WORD	Device ID (default: 0x0001)
-    4		Parameter	N BYTES	N bytes of data - size predefined
-    4 + N	Checksum	WORD	Byte addition checksum
-    """
+    
     
     def __init__(self,
                  port = '/dev/ttyAMA0',
@@ -68,22 +39,39 @@ class FingerPi():
     ## Individual command implementation
 
     ## Base:
-    def sendCommand(self, command, parameters = 0x00, data_packet = False, data_len = 0):
-        packet = self._make_packet(command, parameters)
+    def sendCommand(self, command, parameters = 0x00, data = None, data_len = 0):
+        if command == 'data':
+            packet = make_packet('data', device_id = self.device_id, data = data, data_len = data_len)
+        else:
+            packet = make_packet('comm', device_id = self.device_id, paramter = parameter, command = command)
+
         while not self.serial.writable():
             pass
         command_res = self.serial.write(packet)
-        resp = self.serial.read(12)
-        resp = self._response_decode(resp)
-        
-        data = []
+        response = self.serial.read(12)
 
-        if data_packet:
-            data = self.serial.read(data_len)
-            data = self._response_decode(data, 'd')
-            data = [data_len, data]
+        if command == 'data':
+            response = decode_packet('data', packet = response, data_len = data_len)
+        else:
+            response = decode_packet('comm', packet = response)
+
+        return response
+
+        # packet = self._make_packet(command, parameters)
+        # while not self.serial.writable():
+        #     pass
+        # command_res = self.serial.write(packet)
+        # resp = self.serial.read(12)
+        # resp = self._response_decode(resp)
         
-        return [resp, data]
+        # data = []
+
+        # if data_packet:
+        #     data = self.serial.read(data_len)
+        #     data = self._response_decode(data, 'd')
+        #     data = [data_len, data]
+        
+        # return [resp, data]
 
     def Open(self, extra_info = False, check_baudrate = False):
         # Check baudrate:
@@ -161,51 +149,51 @@ class FingerPi():
     ##
     #########################################################
     
-    def _make_packet(self, command, parameter = None, start_code = None):
-        """
-        Note that if the command is specified adirectly as an INT, it will
-        not be checked!!!
-        """
-        if type(command) == str:
-            command = fingerpi_base.command(command)
-        if parameter is None:
-            parameter = 0
+    # def _make_packet(self, command, parameter = None, start_code = None):
+    #     """
+    #     Note that if the command is specified adirectly as an INT, it will
+    #     not be checked!!!
+    #     """
+    #     if type(command) == str:
+    #         command = fingerpi_base.command(command)
+    #     if parameter is None:
+    #         parameter = 0
 
-        if start_code is None:
-            start_code = fingerpi_base.start_codes('Command')
+    #     if start_code is None:
+    #         start_code = fingerpi_base.start_codes('Command')
         
-        start_code = fingerpi_base.make_bytearray(
-            start_code, fingerpi_base.WORD, '>', False)
-        command = fingerpi_base.make_bytearray(
-            command, fingerpi_base.WORD, '<', True)
-        parameter = fingerpi_base.make_bytearray(
-            parameter, fingerpi_base.DWORD, '>', True)
+    #     start_code = fingerpi_base.make_bytearray(
+    #         start_code, fingerpi_base.WORD, '>', False)
+    #     command = fingerpi_base.make_bytearray(
+    #         command, fingerpi_base.WORD, '<', True)
+    #     parameter = fingerpi_base.make_bytearray(
+    #         parameter, fingerpi_base.DWORD, '>', True)
 
-        res = start_code + self._device_id + parameter + command
-        # print sum(res)
-        res += fingerpi_base.checksum(res)
-        # print list(parameter)
-        return res
+    #     res = start_code + self._device_id + parameter + command
+    #     # print sum(res)
+    #     res += fingerpi_base.checksum(res)
+    #     # print list(parameter)
+    #     return res
 
-    def _response_decode(self, response, packet = 'r'):
-        assert packet == 'r' or packet == 'd'
-        res = []
-        if response == '':
-            return None
-        if packet == 'r':
-            # print "ACK: ", map(ord,list(response[8:10]))
-            res.append(fingerpi_base.start_codes(response[:2]))
-            res.append(response[2:4])
-            res.append(fingerpi_base.error(response[4:8]))
-            res.append(fingerpi_base.response(response[8:10]))
-            res.append(response[10:])
-        else:
-            ln = len(res)
-            data_len = ln - 6
-            res.append(fingerpi_base.start_codes(response[:2]))
-            res.append(response[2:4])
-            res.append(response[4:4+data_len])
-            res.append(response[4+data_len:])
+    # def _response_decode(self, response, packet = 'r'):
+    #     assert packet == 'r' or packet == 'd'
+    #     res = []
+    #     if response == '':
+    #         return None
+    #     if packet == 'r':
+    #         # print "ACK: ", map(ord,list(response[8:10]))
+    #         res.append(fingerpi_base.start_codes(response[:2]))
+    #         res.append(response[2:4])
+    #         res.append(fingerpi_base.error(response[4:8]))
+    #         res.append(fingerpi_base.response(response[8:10]))
+    #         res.append(response[10:])
+    #     else:
+    #         ln = len(res)
+    #         data_len = ln - 6
+    #         res.append(fingerpi_base.start_codes(response[:2]))
+    #         res.append(response[2:4])
+    #         res.append(response[4:4+data_len])
+    #         res.append(response[4+data_len:])
 
-        return res
+    #     return res
     
