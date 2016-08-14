@@ -30,9 +30,6 @@ class FingerPi():
 
         self.serial = serial.Serial(
             port = self.port, baudrate = self.baudrate, *args, **kwargs)
-            
-        self._device_id = fingerpi_base.make_bytearray(
-            device_id, fingerpi_base.WORD, '<', True)
 
     
     ##########################################################
