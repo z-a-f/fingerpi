@@ -38,11 +38,11 @@ class FingerPi():
     ## Individual command implementation
 
     ## Base:
-    def sendCommand(self, command, parameters = 0x00, data = None, data_len = 0):
+    def sendCommand(self, command, parameter = 0x00, data = None, data_len = 0):
         if command == 'data':
             packet = make_packet('data', device_id = self.device_id, data = data, data_len = data_len)
         else:
-            packet = make_packet('comm', device_id = self.device_id, paramter = parameter, command = command)
+            packet = make_packet('comm', device_id = self.device_id, parameter = parameter, command = command)
 
         while not self.serial.writable():
             pass
