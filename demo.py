@@ -15,14 +15,14 @@ print f.Open(extra_info = True, check_baudrate = True)
 print f.ChangeBaudrate(57600)
 
 
-print f.sendCommand(command('CmosLed'), 0)
+print f.CmosLed(True)
 time.sleep(1)
-print f.sendCommand(command('CmosLed'), 1)
+print f.CmosLed(False)
 time.sleep(1)
 
 print f.GetEnrollCount()
 
-print f.ChangeBaudrate(57600)
+print f.ChangeBaudrate(9600)
 
 for idx in xrange(10):
     print f.sendCommand(command('CmosLed'), 0)
