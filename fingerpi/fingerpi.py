@@ -31,6 +31,8 @@ class FingerPi():
         self.serial = serial.Serial(
             port = self.port, baudrate = self.baudrate, *args, **kwargs)
 
+        self.device_id = device_id
+
     
     ##########################################################
     ## Individual command implementation
