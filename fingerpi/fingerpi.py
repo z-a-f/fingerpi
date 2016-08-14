@@ -38,7 +38,7 @@ class FingerPi():
     ## Individual command implementation
 
     ## Base:
-    def sendCommand(self, command, parameter = 0x00, data = None, data_len = 0):
+    def sendCommand(self, command, parameter = 0x00, data = None, data_len = 0, data_in_len = 0):
         if command == 'data':
             packet = make_packet('data', device_id = self.device_id, data = data, data_len = data_len)
         else:
@@ -54,23 +54,13 @@ class FingerPi():
         else:
             response = decode_packet('comm', packet = response)
 
+        data_in = None
+        if data_in_len > 0:
+            data_in = self.serial.read(data_in_len)
+
+        response = [response, data_in]
+
         return response
-
-        # packet = self._make_packet(command, parameters)
-        # while not self.serial.writable():
-        #     pass
-        # command_res = self.serial.write(packet)
-        # resp = self.serial.read(12)
-        # resp = self._response_decode(resp)
-        
-        # data = []
-
-        # if data_packet:
-        #     data = self.serial.read(data_len)
-        #     data = self._response_decode(data, 'd')
-        #     data = [data_len, data]
-        
-        # return [resp, data]
 
     def Open(self, extra_info = False, check_baudrate = False):
         # Check baudrate:
@@ -100,9 +90,9 @@ class FingerPi():
 
     def CmosLed(self, on = False):
         if on:
-            return self.sendCommand('CmosLed', 0)
-        else:
             return self.sendCommand('CmosLed', 1)
+        else:
+            return self.sendCommand('CmosLed', 0)
 
     def ChangeBaudrate(self, baudrate):
         resp = self.sendCommand('ChangeBaudrate', baudrate)
