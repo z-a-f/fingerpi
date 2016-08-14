@@ -80,15 +80,17 @@ def start_codes(val):
         'Command': '\x55\xAA',
         '\x55\xAA': 'Command', 
         'Data': '\x5A\xA5',
-        '\x5A\xA5': 'Data'
+        '\x5A\xA5': 'Data',
+        '': 'None'
     }
 
     if __start.get(val, None) is None:
-        raise NotImplementedError("Command unknown: " + str(val))
+        raise NotImplementedError("Command unknown: " + val)
     return __start[val]
 
 def command(val):
     __command = {
+        'None': 0x00,
         'Open': 0x01,             # Initialization
         'Close': 0x02,            # Termination
         # ...
@@ -137,6 +139,8 @@ def command(val):
         raise TypeError("Input should be of type 'str'")
 
 def error(val):
+    # if type(val) == str:
+        
     # Errors are num: value format :)
     __error = {
         0x1001: 'NACK_TIMEOUT', 		# (Obsolete) Capture timeout
@@ -157,8 +161,12 @@ def error(val):
         0x100F: 'NACK_DEV_ERR',                 # Device error: probably Crypto-Chip is faulty (Wrong checksum ~Z)
         0x1010: 'NACK_CAPTURE_CANCELED',        # (Obsolete) Capturing was canceled
         0x1011: 'NACK_INVALID_PARAM',           # Invalid parameter
-        0x1012: 'NACK_FINGER_IS_NOT_PRESSED' 	# Finger is not pressed
+        0x1012: 'NACK_FINGER_IS_NOT_PRESSED', 	# Finger is not pressed
+        0: 'ACK'
     }
+
+    # val = ord(val[1]) * 16 + ord(val[0])
+    val = ord(val[0]) * 16 + ord(val[1])
     
     if __error.get(val, None) is not None:
         return __error[val]
@@ -171,7 +179,9 @@ def error(val):
 def response(val):
     __response = {
         'Ack': 0x30,
-        'Nack': 0x31
+        'Nack': 0x31,
+        '\x30\x00': 'Ack',
+        '\x31\x00': 'Nack'
     }
     # __response_val = {
     #     0x30: 'ACK',
