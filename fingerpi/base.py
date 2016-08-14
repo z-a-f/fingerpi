@@ -99,8 +99,8 @@ def decode_packet(typ = 'comm', packet = None, data_len = 0):
         # code = hex(packet[0])[2:] + hex(packet[1])[2:]
         # res['Start Code'] = packets[int(code, 16)]
         res['Start Code'] = packets[0x55AA]
-        res['Device ID'] = packet[2]
-        res['Response'] = packet[4]
+        res['Device ID'] = hex(packet[2])
+        res['Response'] = response[packet[4]]
         res['Error Code'] = errors[packet[3]] if (res['Response'] == 'Nack') else None
     elif typ == 'data':
         packet = struct.unpack(data_struct(data_len), packet[:-2])
