@@ -89,7 +89,8 @@ def decode_packet(typ = 'comm', packet = None, data_len = 0):
     structure = ''
     if type(packet) != bytearray:
         packet = bytearray(packet)
-    print len(packet)
+    if len(packet) == 0:
+        return res
     checksum = struct.unpack(checksum_struct(), packet[-2:])
     res['Checksum'] = sum(packet[:-2]) != checksum
 
