@@ -34,7 +34,4 @@ for idx in xrange(10):
 
 print f.sendCommand(command('CmosLed'), 0)
 
-
 print f.sendCommand(command('Close'))
-
-

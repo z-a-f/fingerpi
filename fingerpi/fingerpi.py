@@ -55,11 +55,10 @@ class FingerPi():
         else:
             response = decode_packet('comm', packet = response)
 
-        data_in = None
         if data_in_len > 0:
-            data_in = self.serial.read(data_in_len)
+            response['Data'] = self.serial.read(data_in_len)
 
-        response = [response, data_in]
+        response = response
 
         return response
 
