@@ -68,7 +68,7 @@ commands = {
     'IdentifyTemplate': 0x53,   # 1:N Identification of a fingerprint template with the database
     'CaptureFinger':    0x60,   # Capture a fingerprint image(256x256) from the sensor
     'MakeTemplate':     0x61,   # Make template for transmission
-    'GetImage':         0x61,   # Download the captured fingerprint image (256x256)
+    'GetImage':         0x62,   # Download the captured fingerprint image (256x256)
     'GetRawImage':      0x63,   # Capture & Download raw fingerprint image (32'\x240)
     'GetTemplate':      0x70,   # Download the template of the specified ID 
     'SetTemplate':      0x71,   # Upload the template of the specified ID

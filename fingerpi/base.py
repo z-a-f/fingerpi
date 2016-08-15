@@ -87,6 +87,9 @@ def decode_command_packet(packet):
     if packet == '': # Nothing to decode
         response['ACK'] = False
         return response
+    # Check if it is a data packet:
+    if packet[0] == packets['Data1'] and packet[1] == packets['Data2']:
+        return decode_data_packet(packet)
     # Strip the checksum and get the values out
     checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
     packet = packet[:-2]
@@ -107,11 +110,20 @@ def decode_data_packet(packet):
         'Data': None,
         'Checksum': None        
     }
+    if packet == '':
+        response['ACK'] = False
+        return response
+    # Check if it is a command packet:
+    if packet[0] == packets['Command1'] and packet[1] == packets['Command2']:
+        return decode_command_packet(packet)
     
     # Strip the checksum and get the values out
     checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
     packet = packet[:-2]
-    response['Checksum'] = sum(packet) == checksum # True if checksum is correct
+    # Data sum might be larger than the checksum field:
+    chk = sum(packet)
+    chk &= 0xffff
+    response['Checksum'] = chk == checksum # True if checksum is correct
     
     data_len = len(packet) - 4 # Exclude the header (2) and device ID (2)
 

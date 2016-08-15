@@ -156,7 +156,7 @@ class FingerPi():
             raise RuntimeError("Couldn't send packet")
         data = None
         if self.save:
-            data = getData(498)
+            data = self.getData(498)
         return [response, data]
 
     def IsPressFinger(self):
@@ -228,28 +228,39 @@ class FingerPi():
         else:
             raise RuntimeError("Couldn't send packet")
         self.serial.timeout = 10
-        data = getData(498)
+        data = self.getData(498)
         self.serial.timeout = self.timeout
         return [response, data]
 
-    def GetImage(self):
+    def GetImage(self, dim = (258, 202)):
+        # The documentation is ambiguous:
+        # Dimensions could be 202x258 or 256x256
+        to_read = dim[0]*dim[1]
+
         if self.sendCommand('GetImage'):
             response = self.getResponse()
         else:
             raise RuntimeError("Couldn't send packet")
-        self.serial.timeout = None # This is dangerous!
-        data = getData(52116)
-        self.serial.timeout = self.timeout
+        data = None
+        if response['ACK']:
+            self.serial.timeout = None # This is dangerous!
+            data = self.getData(dim[0]*dim[1])
+            self.serial.timeout = self.timeout
+            data['Data'] = (data['Data'], dim)
         return [response, data]
 
-    def GetRawImage(self):
+    def GetRawImage(self, dim = (160, 120)):
         if self.sendCommand('GetRawImage'):
             response = self.getResponse()
         else:
             raise RuntimeError("Couldn't send packet")
-        self.serial.timeout = None # This is dangerous!
-        data = getData(19200)
-        self.serial.timeout = self.timeout
+        data = None
+        if response['ACK']:
+            self.serial.timeout = None # This is dangerous!
+            data = self.getData(dim[0]*dim[1])
+            self.serial.timeout = self.timeout
+            # Add dimensions to the data
+            data['Data'] = (data['Data'], dim)
         return [response, data]
 
     def GetTemplate(self, ID):
@@ -258,7 +269,7 @@ class FingerPi():
         else:
             raise RuntimeError("Couldn't send packet")
         self.serial.timeout = None # This is dangerous!
-        data = getData(498)
+        data = self.getData(498)
         self.serial.timeout = self.timeout
         return [response, data]
 
