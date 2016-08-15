@@ -1,29 +1,13 @@
 #!/usr/bin/env python
 
 import fingerpi as fp
-from fingerpi.base import make_packet
-import time
-import serial
-# from fingerpi.fingerpi_base import command
+from fingerpi import base
 
-# from fingerpi.fingerpi_base import checksum as cs
-# from fingerpi.fingerpi_base import make_bytearray as mb
-# from fingerpi.fingerpi_base import printBytearray
+import struct
 
-def byte2list(arr):
-    assert type(arr) == bytearray
-    res = []
-    for el in arr:
-        res.append(hex(el))
-    return res
+def printByteArray(arr):
+    return map(hex, list(arr))
 
-print byte2list(make_packet('comm', command = 'Open'))
+f = fp.FingerPi()
 
-ser = serial.Serial(port = '/dev/cu.usbmodem1421', timeout = 2., baudrate = 9600)
-
-packet = make_packet('comm', command = 'CmosLed', parameter = 1)
-print ser.write(packet)
-print ser.read(12)
-
-
-
+print f.Open(check_baudrate = True)

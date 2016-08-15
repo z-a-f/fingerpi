@@ -5,25 +5,14 @@ import os, sys
 import serial
 
 from .base import *
-# from .base import * # (_fp_command, _fp_response,  _fp_error)
-# import fingerpi_base
-
-# from fingerpi_base import printBytearray
 
 class FingerPi():
-    
-    
     def __init__(self,
                  port = '/dev/ttyAMA0',
                  baudrate = 9600,
                  device_id = 0x01,
-                 *args, **kwargs
-    ):
-        ## First check if serial port is openable :)
-        # super(FingerPi, self).__init__(
-        #     port = port, baudrate = baudrate, *args, **kwargs)
-        if port is None:
-            port = '/dev/ttyAMA0'
+                 timeout = 2
+                 *args, **kwargs):
         self.port = port
         self.baudrate = baudrate
         if not os.path.exists(port):
@@ -33,156 +22,256 @@ class FingerPi():
             port = self.port, baudrate = self.baudrate, *args, **kwargs)
 
         self.device_id = device_id
+        self.timeout = 5
+
+        self.serial.flushInput()
+        self.serial.flushOutput()
 
     
     ##########################################################
-    ## Individual command implementation
+    ## Send/Get routines
 
-    ## Base:
-    def sendCommand(self, command, parameter = 0x00, data = None, data_len = 0, data_in_len = 0):
-        if command == 'data':
-            packet = make_packet('data', device_id = self.device_id, data = data, data_len = data_len)
-        else:
-            packet = make_packet('comm', device_id = self.device_id, parameter = parameter, command = command)
+    def sendCommand(self, command, parameter = 0x00):
+        if type(parameter) == bool:
+            parameter = parameter*1
+        packet = encode_command_packet(command, parameter, device_id = self.device_id)
 
-        while not self.serial.writable():
-            pass
-        command_res = self.serial.write(packet)
-        response = self.serial.read(12)
+        # The length of the written command should match:
+        result = len(packet) == self.serial.write(packet)
+        self.serial.flush()
+        return result
 
-        if command == 'data':
-            response = decode_packet('data', packet = response, data_len = data_len)
-        else:
-            response = decode_packet('comm', packet = response)
+    def getResponse(self, response_len = 12):
+        response = self.serial.read(response_len)
+        return decode_command_packet(response)
 
-        if data_in_len > 0:
-            response['Data'] = self.serial.read(data_in_len)
+    def sendData(self, data, data_len):
+        packet = encode_data_packet(data, data_len, device_id = self.device_id)
+        result = len(packet) == self.serial.write(packet)
+        self.serial.flush()
+        return result
 
-        response = response
+    def getData(self, data_len):
+        # Data length is different for every command
+        response = self.serial.read(1+1+2+data_len+2) # Header(2) + ID(2) + data + checksum(2)
+        return decode_data_packet(response)
 
-        return response
 
+    ##########################################################
+    ## Send/Get routines
     def Open(self, extra_info = False, check_baudrate = False):
         # Check baudrate:
         if check_baudrate:
             self.serial.timeout = 0.5
-            for baudrate in self.serial.BAUDRATES:
+            for baudrate in (self.serial.baudrate,) + self.serial.BAUDRATES:
                 if 9600 <= baudrate <= 115200:
                     self.serial.baudrate = baudrate
-                    resp = self.sendCommand('Open')
-                    print resp
-                    if resp['Start Code'] is not None:
+                    if not self.sendCommand('Open', extra_info):
+                        raise RuntimeError("Couldn't send 'Open' packet!")
+                    response = self.getResponse(4+4+16)
+                    if response['ACK']:
+                        # Decodede something
                         break
-            if self.serial.baudrate > 115200:
+            if self.serial.baudrate > 115200: # Cannot be more than that
                 raise RuntimeError("Couldn't find appropriate baud rate!")
-                
-        if extra_info:
-            return self.sendCommand('Open', 1)
-        else:
-            return self.sendCommand('Open')
+        self.serial.timeout = self.timeout
+        return [response, self.getData()]
 
     def Close (self):
-        self.ChangeBaudrate(9600)
-        return self.sendCommand('Close')
+        # self.ChangeBaudrate(9600)
+        if self.sendCommand('Close'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def UsbInternalCheck(self):
-        return self.sendCommand('UsbInternalCheck')
+        if self.sendCommand('UsbInternalCheck'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def CmosLed(self, on = False):
-        if on:
-            return self.sendCommand('CmosLed', 1)
+        if self.sendCommand('CmosLed', on):
+            return [self.getResponse(), None]
         else:
-            return self.sendCommand('CmosLed', 0)
+            raise RuntimeError("Couldn't send packet")
 
     def ChangeBaudrate(self, baudrate):
-        resp = self.sendCommand('ChangeBaudrate', baudrate)
-        self.serial.baudrate = baudrate
-        return resp
+        if self.sendCommand('ChangeBaudrate', baudrate):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def GetEnrollCount(self):
-        return self.sendCommand('GetEnrollCount')
+        if self.sendCommand('GetEnrollCount'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def CheckEnrolled(self, ID):
-        return self.sendCommand('CheckEnrolled', ID)
+        if self.sendCommand('CheckEnrolled', ID):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def EnrollStart(self, ID):
-        return self.sendCommand('EnrollStart', ID)
+        self.save = ID == -1
+        if self.sendCommand('EnrollStart'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def Enroll1(self):
-        return self.sendCommand('Enroll1')
+        if self.sendCommand('Enroll1'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def Enroll2(self):
-        return self.sendCommand('Enroll2')
+        if self.sendCommand('Enroll2'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def Enroll3(self):
-        return self.sendCommand('Enroll3', True, 498 + 6)
+        if self.sendCommand('GetEnrollCount'):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        data = None
+        if self.save:
+            data = getData(498)
+        return [response, data]
 
     def IsPressFinger(self):
-        return self.sendCommand('IsPressFinger')
+        if self.sendCommand('IsPressFinger'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def DeleteId(self, ID):
-        return self.sendCommand('DeleteID', ID)
+        if self.sendCommand('DeleteId', ID):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def DeleteAll(self):
-        return self.sendCommand('DeleteAll')
+        if self.sendCommand('DeleteAll'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def Verify(self, ID):
-        return self.sendCommand('Verify', ID)
+        if self.sendCommand('Verify'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
     def Identify(self):
-        return self.sendCommand('Identify')
+        if self.sendCommand('Identify'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
-    
-        
-    
-    ##
-    #########################################################
-    
-    # def _make_packet(self, command, parameter = None, start_code = None):
-    #     """
-    #     Note that if the command is specified adirectly as an INT, it will
-    #     not be checked!!!
-    #     """
-    #     if type(command) == str:
-    #         command = fingerpi_base.command(command)
-    #     if parameter is None:
-    #         parameter = 0
+    def VerifyTemplate(self, ID, template):
+        if self.sendCommand('VerifyTemplate', ID):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        if self.sendData(template, 498):
+            data = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet (data)")
+        return [response, data]
 
-    #     if start_code is None:
-    #         start_code = fingerpi_base.start_codes('Command')
-        
-    #     start_code = fingerpi_base.make_bytearray(
-    #         start_code, fingerpi_base.WORD, '>', False)
-    #     command = fingerpi_base.make_bytearray(
-    #         command, fingerpi_base.WORD, '<', True)
-    #     parameter = fingerpi_base.make_bytearray(
-    #         parameter, fingerpi_base.DWORD, '>', True)
+    def IdentifyTemplate(self, template):
+        if self.sendCommand('IdentifyTemplate'):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        if self.sendData(template, 498):
+            data = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet (data)")
+        return [response, data]
 
-    #     res = start_code + self._device_id + parameter + command
-    #     # print sum(res)
-    #     res += fingerpi_base.checksum(res)
-    #     # print list(parameter)
-    #     return res
+    def CaptureFinger(self, best_image = False):
+        # For enrollment use 'best_image = True'
+        # For identification use 'best_image = False'
+        if best_image:
+            self.serial.timeout = 10
+        if self.sendCommand('CaptureFinger', best_image):
+            self.serial.timeout = self.timeout
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
 
-    # def _response_decode(self, response, packet = 'r'):
-    #     assert packet == 'r' or packet == 'd'
-    #     res = []
-    #     if response == '':
-    #         return None
-    #     if packet == 'r':
-    #         # print "ACK: ", map(ord,list(response[8:10]))
-    #         res.append(fingerpi_base.start_codes(response[:2]))
-    #         res.append(response[2:4])
-    #         res.append(fingerpi_base.error(response[4:8]))
-    #         res.append(fingerpi_base.response(response[8:10]))
-    #         res.append(response[10:])
-    #     else:
-    #         ln = len(res)
-    #         data_len = ln - 6
-    #         res.append(fingerpi_base.start_codes(response[:2]))
-    #         res.append(response[2:4])
-    #         res.append(response[4:4+data_len])
-    #         res.append(response[4+data_len:])
+    def MakeTemplate(self):
+        if self.sendCommand('MakeTemplate'):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        self.serial.timeout = 10
+        data = getData(498)
+        self.serial.timeout = self.timeout
+        return [response, data]
 
-    #     return res
-    
+    def GetImage(self):
+        if self.sendCommand('GetImage'):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        self.serial.timeout = None # This is dangerous!
+        data = getData(52116)
+        self.serial.timeout = self.timeout
+        return [response, data]
+
+    def GetRawImage(self):
+        if self.sendCommand('GetRawImage'):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        self.serial.timeout = None # This is dangerous!
+        data = getData(19200)
+        self.serial.timeout = self.timeout
+        return [response, data]
+
+    def GetTemplate(self, ID):
+        if self.sendCommand('GetTemplate', ID):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        self.serial.timeout = None # This is dangerous!
+        data = getData(498)
+        self.serial.timeout = self.timeout
+        return [response, data]
+
+    def SetTemplate(self, ID, template):
+        if self.sendCommand('SetTemplate', ID):
+            response = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet")
+        if self.sendData(template, 498):
+            data = self.getResponse()
+        else:
+            raise RuntimeError("Couldn't send packet (data)")
+        return [response, data]
+
+    def GetDatabaseStart(self):
+        if self.sendCommand('GetDatabaseStart'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
+
+    def GetDatabaseEnd(self):
+        if self.sendCommand('GetDatabaseEnd'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
+
+    def SetIAPMode(self):
+        if self.sendCommand('SetIAPMode'):
+            return [self.getResponse(), None]
+        else:
+            raise RuntimeError("Couldn't send packet")
+

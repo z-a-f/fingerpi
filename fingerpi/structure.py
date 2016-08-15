@@ -32,7 +32,7 @@ OFFSET  ITEM        TYPE    DESCRIPTION
 """
 
 comm_struct = lambda: '<BBHIH'
-data_struct = lambda x: '<HH' + str(x) + 'B'
+data_struct = lambda x: '<BBH' + str(x) + 'B'
 checksum_struct = lambda: '<H'
 
 packets = {
@@ -40,8 +40,8 @@ packets = {
     'Command2':  0xAA,
     'Data1':     0x5A,
     'Data2':     0xA5,
-    0x55AA:     'Comm',
-    0x5AA5:     'Data'
+    '\x55\xAA':  'C',
+    '\x5A\xA5':  'D'
 }
 
 commands = {

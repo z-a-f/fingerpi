@@ -43,79 +43,84 @@ Args:
     parameter: Parameter to send
     command: Command to send
 """
-def make_packet(
-        typ = 'comm', 
-        device_id = 1,
-        parameter = 0,
-        command = None,
-        data = None,
-        data_len = 0):
-    
-    structure = ''
-    command = commands[command]
 
-    if typ == 'comm':
-        structure = comm_struct()
-        packet = bytearray(struct.pack(structure, 
-            packets['Command1'],    # Start code 1
-            packets['Command2'],    # Start code 2
-            device_id,              # Device ID
-            parameter,              # Parameter
-            command                 # Command
-        ))
-    elif typ == 'data':
-        structure = data_struct(data_len)
-        packet = bytearray(struct.pack(structure,
-            packets['Data1'],
-            packets['Data2'],
-            device_id,
-            data
-        ))
-    else:
-        raise InputError("Command type unknown")
+def encode_command_packet(
+        command = None,
+        parameter = 0,
+        device_id = 1):
+    
+    command = commands[command]
+    packet = bytearray(struct.pack(comm_struct(), 
+        packets['Command1'],    # Start code 1
+        packets['Command2'],    # Start code 2
+        device_id,              # Device ID
+        parameter,              # Parameter
+        command                 # Command
+    ))
     checksum = sum(packet)
     packet += bytearray(struct.pack(checksum_struct(), checksum))
     return packet
 
-def decode_packet(typ = 'comm', packet = None, data_len = 0):
-    res = {
-        'Start Code': None,
-        'Device ID': None,
-        'Response': None,
-        'Error Code': None,
-        'Data': None,
-        'Checksum': None
+def encode_data_packet(
+        data = None,
+        data_len = 0,
+        device_id = 1):
+    
+    packet = bytearray(struct.pack(data_struct(data_len), 
+        packets['Data1'],    # Start code 1
+        packets['Data2'],    # Start code 2
+        device_id,           # Device ID
+        data                 # Data to be sent
+    ))
+    checksum = sum(packet)
+    packet += bytearray(struct.pack(checksum_struct(), checksum))
+    return packet
+
+def decode_command_packet(packet):
+    response = {
+        'Header': None,
+        'DeviceID': None,
+        'ACK': None,
+        'Parameter': None,
+        'Checksum': None        
     }
-    structure = ''
-    if type(packet) != bytearray:
-        packet = bytearray(packet)
-    if len(packet) == 0:
-        return res
-    checksum = struct.unpack(checksum_struct(), packet[-2:])
-    res['Checksum'] = sum(packet[:-2]) == sum(checksum)
+    if packet = '': # Nothing to decode
+        response['ACK'] = False
+        return response
+    # Strip the checksum and get the values out
+    checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
+    packet = packet[:-2]
+    response['Checksum'] = sum(packet) == checksum # True if checksum is correct
+    
+    packet = struct.unpack(comm_struct(), packet)
+    response['Header'] = hex(packet[0])[2:] + hex(packet[1])[2:]
+    response['DeviceID'] = hex(packet[2])[2:]
+    response['ACK'] = packet[4] != 0x31 # Not NACK, might be command
+    response['Parameter'] = packet[3] if response['ACK'] else errors[packet[4]]
 
-    if typ == 'comm':
-        try:
-            packet = struct.unpack(comm_struct(), packet[:-2])
-        except struct.error as e:
-            return len(packet)
-        # code = hex(packet[0])[2:] + hex(packet[1])[2:]
-        # res['Start Code'] = packets[int(code, 16)]
-        res['Start Code'] = packets[0x55AA]
-        res['Device ID'] = hex(packet[2])
-        res['Response'] = packet[4]# responses[packet[4]]
-        res['Error Code'] = errors[packet[3]] if (res['Response'] == 'Nack') else None
-    elif typ == 'data':
-        packet = struct.unpack(data_struct(data_len), packet[:-2])
-        # code = hex(packet[0])[2:] + hex(packet[1])[2:]
-        # res['Start Code'] = packets[int(code, 16)]
-        res['Start Code'] = packets[0x5AA5]
-        res['Device ID'] = packet[2]
-        res['Data'] = packet[3:-2]
-    else:
-        raise InputError('Command type unknown')
+    return response
 
-    return res
+def decode_data_packet(packet):
+    response = {
+        'Header': None,
+        'DeviceID': None,
+        'Data': None,
+        'Checksum': None        
+    }
+    # Strip the checksum and get the values out
+    checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
+    packet = packet[:-2]
+    response['Checksum'] = sum(packet) == checksum # True if checksum is correct
+    
+    data_len = len(packet) - 4 # Exclude the header (2) and device ID (2)
+
+    packet = struct.unpack(data_struct(data_len), packet)
+    response['Header'] = hex(packet[0])[2:] + hex(packet[1])[2:]
+    response['DeviceID'] = hex(packet[2])[2:]
+    response['Data'] = packet[3]
+
+    return response
+
 
 
 
