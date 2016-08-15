@@ -9,7 +9,9 @@ import time
 # from fingerpi.fingerpi_base import make_bytearray as mb
 # from fingerpi.fingerpi_base import printBytearray
 
-f = fp.FingerPi('/dev/ttyAMA0', baudrate = 9600)
+
+
+f = fp.FingerPi('/dev/cu.usbmodem1421', baudrate = 9600)
 
 print f.Open(extra_info = True, check_baudrate = True)
 print f.ChangeBaudrate(57600)

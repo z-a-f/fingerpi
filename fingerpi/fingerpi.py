@@ -3,6 +3,7 @@
 
 import os, sys
 import serial
+
 from .base import *
 # from .base import * # (_fp_command, _fp_response,  _fp_error)
 # import fingerpi_base
@@ -77,7 +78,7 @@ class FingerPi():
                 raise RuntimeError("Couldn't find appropriate baud rate!")
                 
         if extra_info:
-            return self.sendCommand('Open', 0x01, True, 30)
+            return self.sendCommand('Open', 1)
         else:
             return self.sendCommand('Open')
 
