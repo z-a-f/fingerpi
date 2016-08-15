@@ -54,11 +54,10 @@ class FingerPi():
         else:
             response = decode_packet('comm', packet = response)
 
-        data_in = None
         if data_in_len > 0:
-            data_in = self.serial.read(data_in_len)
+            response['Data'] = self.serial.read(data_in_len)
 
-        response = [response, data_in]
+        response = response
 
         return response
 
@@ -77,7 +76,7 @@ class FingerPi():
                 raise RuntimeError("Couldn't find appropriate baud rate!")
                 
         if extra_info:
-            return self.sendCommand('Open', 0x01, True, 30)
+            return self.sendCommand('Open', 1)
         else:
             return self.sendCommand('Open')
 
