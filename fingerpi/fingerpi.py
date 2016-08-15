@@ -11,7 +11,7 @@ class FingerPi():
                  port = '/dev/ttyAMA0',
                  baudrate = 9600,
                  device_id = 0x01,
-                 timeout = 2
+                 timeout = 2,
                  *args, **kwargs):
         self.port = port
         self.baudrate = baudrate
@@ -19,7 +19,8 @@ class FingerPi():
             raise IOError("Port " + self.port + " cannot be opened!")
 
         self.serial = serial.Serial(
-            port = self.port, baudrate = self.baudrate, *args, **kwargs)
+            port = self.port, baudrate = self.baudrate, timeout = timeout,
+            *args, **kwargs)
 
         self.device_id = device_id
         self.timeout = 5
@@ -43,7 +44,8 @@ class FingerPi():
 
     def getResponse(self, response_len = 12):
         response = self.serial.read(response_len)
-        return decode_command_packet(response)
+        # print len(response)
+        return decode_command_packet(bytearray(response))
 
     def sendData(self, data, data_len):
         packet = encode_data_packet(data, data_len, device_id = self.device_id)
@@ -54,7 +56,8 @@ class FingerPi():
     def getData(self, data_len):
         # Data length is different for every command
         response = self.serial.read(1+1+2+data_len+2) # Header(2) + ID(2) + data + checksum(2)
-        return decode_data_packet(response)
+        # return response
+        return decode_data_packet(bytearray(response))
 
 
     ##########################################################
@@ -68,19 +71,30 @@ class FingerPi():
                     self.serial.baudrate = baudrate
                     if not self.sendCommand('Open', extra_info):
                         raise RuntimeError("Couldn't send 'Open' packet!")
-                    response = self.getResponse(4+4+16)
+                    # print baudrate
+                    response = self.getResponse()
                     if response['ACK']:
-                        # Decodede something
+                        # Decoded something
+                        response['Parameter'] = baudrate
                         break
+                    
             if self.serial.baudrate > 115200: # Cannot be more than that
                 raise RuntimeError("Couldn't find appropriate baud rate!")
+        data = None
+        if extra_info:
+            data = self.getData(16+4+4)
         self.serial.timeout = self.timeout
-        return [response, self.getData()]
+        return [response, data]
 
     def Close (self):
-        # self.ChangeBaudrate(9600)
+        self.ChangeBaudrate(9600)
         if self.sendCommand('Close'):
-            return [self.getResponse(), None]
+            response = self.getResponse()
+            self.serial.flushInput()
+            self.serial.flushOutput()
+            self.serial.close()
+            return [response, None]
+        
         else:
             raise RuntimeError("Couldn't send packet")
 
@@ -98,7 +112,9 @@ class FingerPi():
 
     def ChangeBaudrate(self, baudrate):
         if self.sendCommand('ChangeBaudrate', baudrate):
-            return [self.getResponse(), None]
+            response = self.getResponse()
+            self.serial.baudrate = baudrate
+            return [response, None]
         else:
             raise RuntimeError("Couldn't send packet")
 

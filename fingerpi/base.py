@@ -84,7 +84,7 @@ def decode_command_packet(packet):
         'Parameter': None,
         'Checksum': None        
     }
-    if packet = '': # Nothing to decode
+    if packet == '': # Nothing to decode
         response['ACK'] = False
         return response
     # Strip the checksum and get the values out
@@ -96,7 +96,7 @@ def decode_command_packet(packet):
     response['Header'] = hex(packet[0])[2:] + hex(packet[1])[2:]
     response['DeviceID'] = hex(packet[2])[2:]
     response['ACK'] = packet[4] != 0x31 # Not NACK, might be command
-    response['Parameter'] = packet[3] if response['ACK'] else errors[packet[4]]
+    response['Parameter'] = packet[3] if response['ACK'] else errors[packet[3]]
 
     return response
 
@@ -107,6 +107,7 @@ def decode_data_packet(packet):
         'Data': None,
         'Checksum': None        
     }
+    
     # Strip the checksum and get the values out
     checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
     packet = packet[:-2]
@@ -118,7 +119,7 @@ def decode_data_packet(packet):
     response['Header'] = hex(packet[0])[2:] + hex(packet[1])[2:]
     response['DeviceID'] = hex(packet[2])[2:]
     response['Data'] = packet[3]
-
+    # print packet
     return response
 
 
