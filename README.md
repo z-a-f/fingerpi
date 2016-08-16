@@ -1,6 +1,11 @@
 # fingerpi
 
-Python library for GT-511C3. The library was tested on Raspberry Zero. 
+Python library for GT-511C3. The library was tested on Raspberry Zero.
+
+<img src="demo_code.png" alt="Code" width="200"/>
+
+<img src="demo.png" alt="Demo Image" width="200"/>
+
 
 ## Connectivity
 
