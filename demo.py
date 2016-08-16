@@ -28,11 +28,12 @@ while True:
     response = f.CaptureFinger()
     if response[0]['ACK']:
         break
+    f.CmosLed(False)
     if response[0]['Parameter'] != 'NACK_FINGER_IS_NOT_PRESSED':
-        f.CmosLed(False)
         print 'Unknown Error occured', response[0]['Parameter']
         
-    
+print f.UsbInternalCheck()
+        
 print 'Image captured!'
 f.CmosLed(False)
 
