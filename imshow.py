@@ -14,6 +14,15 @@ print "Length:", len(img)
 
 img = np.reshape(img, dim)
 print "Dimensions: ", img.shape
-plt.imshow(img, cmap = 'gray')
+fig = plt.imshow(img, cmap = 'gray')
+fig.axes.get_xaxis().set_visible(False)
+fig.axes.get_yaxis().set_visible(False)
+plt.axis('off')
 
-plt.show()
+plt.savefig('demo.png',
+            bbox_inches='tight',
+            pad_inches=-.1,
+            frameon=False,
+            transparent=False
+)
+
