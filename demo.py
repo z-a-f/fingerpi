@@ -32,7 +32,7 @@ while True:
     if response[0]['Parameter'] != 'NACK_FINGER_IS_NOT_PRESSED':
         print 'Unknown Error occured', response[0]['Parameter']
         
-print f.UsbInternalCheck()
+# print f.UsbInternalCheck()
         
 print 'Image captured!'
 f.CmosLed(False)
