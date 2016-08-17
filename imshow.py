@@ -19,7 +19,7 @@ fig.axes.get_xaxis().set_visible(False)
 fig.axes.get_yaxis().set_visible(False)
 plt.axis('off')
 
-plt.savefig('demo.png',
+plt.savefig('demo_temp.png',
             bbox_inches='tight',
             pad_inches=-.1,
             frameon=False,

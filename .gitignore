@@ -9,3 +9,6 @@
 
 # Any pickle files
 *.pickle
+
+# Temporary files
+*_temp.*
