@@ -11,4 +11,6 @@
 *.pickle
 
 # Temporary files
-*_temp.*
+temp
+*_temp*
+*.temp
