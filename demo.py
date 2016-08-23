@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import fingerpi as fp
-from fingerpi import base
+# from fingerpi import base
 
-import struct, time
-
+# import struct
+import time
 # import matplotlib.pyplot as plt
 import pickle
+
 
 def printByteArray(arr):
     return map(hex, list(arr))
