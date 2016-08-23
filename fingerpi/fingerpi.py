@@ -80,6 +80,9 @@ class FingerPi():
                     
             if self.serial.baudrate > 115200: # Cannot be more than that
                 raise RuntimeError("Couldn't find appropriate baud rate!")
+        else:
+            self.sendCommand('Open', extra_info)
+            response = self.getResponse()
         data = None
         if extra_info:
             data = self.getData(16+4+4)

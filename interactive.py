@@ -55,7 +55,7 @@ menu_data = {
 }
 
 # This function displays the appropriate menu and returns the option selected
-def runmenu(menu, parent, status = ''):
+def runmenu(menu, parent, response_status = ''):
 
     # work out what text to display as the last menu option
     if parent is None:
@@ -71,7 +71,7 @@ def runmenu(menu, parent, status = ''):
 
     rows, cols = screen.getmaxyx()
     connection_status = 'Closed'
-    response_status = ''
+    # response_status = ''
 
     # Loop until return key is pressed
     while x !=ord('\n'):
@@ -95,7 +95,7 @@ def runmenu(menu, parent, status = ''):
 
             # Add the status of the connection and of the response
             screen.addstr(rows - 1, 4, connection_status)
-            screen.addstr(rows - 10, 4, status)
+            screen.addstr(rows - 10, 4, response_status)
 
 
             screen.refresh()
@@ -122,9 +122,10 @@ def runmenu(menu, parent, status = ''):
 def processmenu(screen, menu, parent=None):
     optioncount = len(menu['options'])
     exitmenu = False
-    status = ''
+    response_status = ''
+    response = None
     while not exitmenu: #Loop until the user exits the menu
-        getin = runmenu(menu, parent, status)
+        getin = runmenu(menu, parent, response_status)
         if getin == optioncount:
                 exitmenu = True
         elif menu['options'][getin]['type'] == COMMAND:
@@ -134,16 +135,19 @@ def processmenu(screen, menu, parent=None):
             #     os.system('amixer cset numid=3 1') # Sets audio output on the pi to 3.5mm headphone jack
             # screen.clear() #clears previous screen
             # os.system(menu['options'][getin]['command']) # run the command
-            try:
-                if menu['options'][getin]['title'] == 'Initialize':
-                    exec(menu['options'][getin]['command'])
-                else:
-                    response = eval(menu['options'][getin]['command'])
-                status = str(reponse['ACK'])
-            except:
-                e = sys.exc_info()
+            # try:
+            if menu['options'][getin]['title'] == 'Initialize':
+                exec(menu['options'][getin]['command'])
+                response_status = 'Connection initialized...'
+            else:
+                response = eval(menu['options'][getin]['command'])
+                response_status = str(response[0]['ACK'])
+            # except Exception as e:
+                # e = sys.exc_info()
+                # raise e
                 # status = '\n\t'.join(map(str, e))
-                status = 'Error: ' + str(e[1])
+                # response_status = 'Error: ' + str(e[1])
+                # response_status = str(e)
             screen.clear() #clears previous screen on key press and updates display based on pos
             # curses.reset_prog_mode()   # reset to 'current' curses environment
             # curses.curs_set(1)         # reset doesn't do this right
