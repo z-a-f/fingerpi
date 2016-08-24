@@ -81,7 +81,8 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
             if status_bottom is not None:
                 screen.clrtoeol()
                 screen.border(0) # Clear to bottom clears the borders as well :(
-                screen.addstr(rows - 1, 4, 'Status: ' + status_bottom)
+                bot = 'Status: ' + status_bottom
+                screen.addstr(rows - 1, 4, bot[:cols-8])
             
             #else:
 

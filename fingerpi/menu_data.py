@@ -1,4 +1,4 @@
-
+import struct 
 import fingerpi as fp
 
 MENU = "menu"
@@ -59,28 +59,38 @@ class Commands():
         self.f = None
         self.status = 'Uninitialized...'
         self.open = False
-
+        self.led = None
+        
     def Initialize(self):
+        status = 'Initialized'
+        if self.f is not None:
+            return ['Already initialized...', status]
         self.f = fp.FingerPi()
-        self.status = 'Closed'
+
         if self.f is None:
             raise Exception('Could not initialize FingerPi()')
-        return ['FingerPi() instance initialized...', self.status]
+        return ['', status]
+
     def Open(self):
+        if self.open:
+            return ['Already open...', None]
         ## Bottom status format:
         # 'Status: Closed' or
         # 'Status: Open\t`Baudrate`\t`firmware ver.`\t`device serial number`'
         if self.f is None:
-            return ['Error: Please initialize the device first!', None]
+            raise Exception('Could not Open() - FingerPi() not initialized')
+            # return ['Error: Please initialize the device first!', None]
         self.open = True # Show the default status iff NOT initialized!
         status = [None, None]
         response = self.f.Open(extra_info = True, check_baudrate = True)
         if response[0]['ACK']:
+            data = struct.unpack('II16B', response[1]['Data'])
+            serial_num = bytearray(data[2:])
             status[0] = ''
-            status[1] = 'Open\t%s\t%s\t%s'%(
+            status[1] = 'Open; Baudrate: %s; Firmware ver.: %s; Serial #: %s'%(
                 response[0]['Parameter'],
-                response[1]['Data'][:4],
-                response[1]['Data'][8:]
+                data[0],
+                str(serial_num).encode('hex')
             )
             self.status = status[1]
         return status
