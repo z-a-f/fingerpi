@@ -63,6 +63,8 @@ class Commands():
     def Initialize(self):
         self.f = fp.FingerPi()
         self.status = 'Closed'
+        if self.f is None:
+            raise Exception('Could not initialize FingerPi()')
         return ['FingerPi() instance initialized...', self.status]
     def Open(self):
         ## Bottom status format:
@@ -80,6 +82,7 @@ class Commands():
                 response[1]['Data'][:4],
                 response[1]['Data'][8:]
             )
+            self.status = status[1]
         return status
 
 ## TODO: Commands in the menu_data?
@@ -90,6 +93,7 @@ def processrequest(menu):
     try:
         C
     except:
+        global C
         C = Commands()
     # Run the commands
     try:
