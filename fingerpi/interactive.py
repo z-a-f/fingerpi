@@ -124,10 +124,10 @@ def processmenu(screen, menu, parent=None, status_bottom = 'Uninitialized...'):
         if getin == optioncount:
             exitmenu = True
         elif menu['options'][getin]['type'] == COMMAND:
-            # screen.clear() #clears previous screen
-            status_mid, status_bottom = processrequest(menu['options'][getin])
+            screen.clear() #clears previous screen
+            status_mid, status_bottom = processrequest(menu['options'][getin], screen) # Add additional space
             ## Show the updated status
-            # screen.clear() #clears previous screen on key press and updates display based on pos
+            screen.clear() #clears previous screen on key press and updates display based on pos
         elif menu['options'][getin]['type'] == MENU:
             screen.clear() #clears previous screen on key press and updates display based on pos
             processmenu(screen, menu['options'][getin], menu, status_bottom) # display the submenu, and make sure the status is persistent
