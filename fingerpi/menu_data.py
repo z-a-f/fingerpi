@@ -26,6 +26,8 @@ class RepeatingTimer(object):
         self.timer = Timer(self.interval, self.callback)
         self.timer.start()
 
+port = '/dev/ttyAMA0'
+        
 MENU = "menu"
 COMMAND = "command"
 EXITMENU = "exitmenu"
@@ -39,13 +41,13 @@ menu_data = {
         { 'title': "Enroll Sequence", 'type': COMMAND, 'command': '' },
         { 'title': "All Commands", 'type': MENU, 'subtitle': "Please select an option...", 
         'options': [
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Close", 'type': COMMAND, 'command': '' },
-            { 'title': "UsbInternalCheck", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
+            { 'title': "Open", 'type': COMMAND, 'command': 'Open' },
+            { 'title': "Close", 'type': COMMAND, 'command': 'Close' },
+            { 'title': "USB Internal Check", 'type': COMMAND, 'command': 'UsbInternalCheck' },
+            { 'title': "LED on/off", 'type': COMMAND, 'command': 'CmosLed' },
+            { 'title': "Change Baudrate", 'type': COMMAND, 'command': 'ChangeBaudrate' },
+            { 'title': "Get Enroll Count", 'type': COMMAND, 'command': 'GetEnrollCount' },
+            { 'title': "Check Enrolled", 'type': COMMAND, 'command': 'CheckEnrolled' },
             { 'title': "Open", 'type': COMMAND, 'command': '' },
             { 'title': "Open", 'type': COMMAND, 'command': '' },
             { 'title': "Open", 'type': COMMAND, 'command': '' },
@@ -90,7 +92,7 @@ class Commands():
         status = 'Initialized'
         if self.f is not None:
             return ['Already initialized...', status]
-        self.f = fp.FingerPi()
+        self.f = fp.FingerPi(port = port)
 
         if self.f is None:
             raise Exception('Could not initialize FingerPi()')
@@ -103,7 +105,7 @@ class Commands():
         # 'Status: Closed' or
         # 'Status: Open\t`Baudrate`\t`firmware ver.`\t`device serial number`'
         if self.f is None:
-            raise Exception('Cannot Open - Initialize!')
+            raise Exception('Not initialized!')
             # return ['Error: Please initialize the device first!', None]
         self.open = True # Show the default status iff NOT initialized!
         status = [None, None]
@@ -143,12 +145,14 @@ class Commands():
             return ['LED is set to ' + ('ON' if self.led else 'OFF'), None]
 
     def Blink(self, *args):
+        if not self.open:
+            raise Exception('Not open!')
         screen = args[0]
         y, x = screen.getmaxyx()
         screen.border(0)
         screen.addstr(0, 1, 'Press any button to stop...'[:x-2], curses.A_STANDOUT)
 
-        t = RepeatingTimer(1, self.LED, screen)
+        t = RepeatingTimer(0.5, self.LED, screen)
         t.start()
 
         screen.refresh()
@@ -156,12 +160,14 @@ class Commands():
         if inp:
             t.cancel()
             self.LED(led = False)
-
+            self.led = False
+            
         return ['', None]
 
 
 ## TODO: Commands in the menu_data?
 def processrequest(menu, *args):
+    global C
     ## Need screen to show directions!!!
     scr = args[0]
     y,x = scr.getmaxyx()
@@ -173,7 +179,6 @@ def processrequest(menu, *args):
     try:
         C
     except:
-        global C
         C = Commands()
     # Run the commands
     try:
