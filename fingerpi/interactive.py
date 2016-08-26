@@ -132,7 +132,7 @@ def processrequest(menu, *args):
         status = eval('C.'+menu['command'])(screen) # Give it the subwindow, just in case!
         # We don't want to change the bottom status that often!
         if C.open or status[1] == None:
-            status[1] = C.status
+            status[1] = C._status
     # except UnboundLocalError as e:
     #     # e = sys.exc_info()
     #     # raise e

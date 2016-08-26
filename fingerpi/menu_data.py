@@ -86,7 +86,7 @@ class Commands():
     ## Every method has to return `status` array of size 2
     def __init__(self):
         self._f = None
-        self._status = 'Uninitialized...'
+        self.status = 'Uninitialized...'
         self._led = None
 
         self._open = False
@@ -100,7 +100,7 @@ class Commands():
             __status = 'Open'
         else:
             __status = 'Closed'
-        self._status = self._status_template % (
+        self.status = self._status_template % (
             __status,
             str(self._baudrate),
             str(self._firmware),
