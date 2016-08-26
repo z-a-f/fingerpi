@@ -95,7 +95,7 @@ class Commands():
         self._firmware = 'N/A'
         self._serial_no = 'N/A'
 
-    def _update_status():
+    def _update_status(self):
         if self.open: 
             __status = 'Open'
         else:
