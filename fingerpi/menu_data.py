@@ -89,14 +89,14 @@ class Commands():
         self.status = 'Uninitialized...'
         self._led = None
 
-        self._open = False
+        self.open = False
         self._status_template = r'%s; Baudrate: %s; Firmware ver.: %s; Serial #: %s'
         self._baudrate = 'N/A'
         self._firmware = 'N/A'
         self._serial_no = 'N/A'
 
     def _update_status():
-        if self._open: 
+        if self.open: 
             __status = 'Open'
         else:
             __status = 'Closed'
@@ -121,7 +121,7 @@ class Commands():
         return ['', None]
 
     def Open(self, *args):
-        if self._open:
+        if self.open:
             raise AlreadyOpenError('This device is already open')
         if self._f is None:
             raise NotInitializedError('Please, initialize first!')
@@ -135,14 +135,14 @@ class Commands():
             self._firmware = data[0]
             self._serial_no = str(bytearray(data[2:])).encode('hex')
 
-            self._open = True # Show the default status iff NOT initialized!
+            self.open = True # Show the default status iff NOT initialized!
             self._update_status()
         else:
             raise NackError(response[0]['Parameter'])
         return [None, None]
 
     def Blink(self, *args):
-        if not self._open:
+        if not self.open:
             raise NotOpenError('Please, open the port first!')
         screen = args[0]
         y, x = screen.getmaxyx()
@@ -165,17 +165,17 @@ class Commands():
     ## All (other) commands:
 
     def Close(self, *args, **kwargs):
-        if not self._open:
+        if not self.open:
             raise NotOpenError('Please, open the port first!')
         response = self._f.Close()
         if not response[0]['ACK']:
             raise NackError(response[0]['Parameter'])
-        self._open = False
+        self.open = False
         self._update_status()
         return [None, None]
 
     def UsbInternalCheck(self, *args, **kwargs):
-        if not self._open:
+        if not self.open:
             raise NotOpenError('Please, open the port first!')
         response = self._f.UsbInternalCheck()
         if reponse[0]['ACK']:
@@ -188,7 +188,7 @@ class Commands():
         # 1) If no argument is given - toggle LED
         # 2) If named boolean argument `led` is given - set the led to specified value
         # 3) If positional argument is given - don't return the result, show the result on a separate curses.window
-        if not self._open:
+        if not self.open:
             raise NotOpenError('Please, open the port first!')
         if self._led is None:
             self._led = True
@@ -212,7 +212,7 @@ class Commands():
             raise NackError(response[0]['Parameter'])
 
     def ChangeBaudrate(self, *args, **kwargs):
-        if not self._open:
+        if not self.open:
             raise NotOpenError('Please, open the port first!')
         if not (9600 <= args[0] <= 115200):
             raise ValueError('Incorrect baudrate: ' + str(args[0]))
