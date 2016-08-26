@@ -34,11 +34,17 @@ MENU = "menu"
 COMMAND = "command"
 EXITMENU = "exitmenu"
 
+BAUDRATES = [9600, 14400, 19200, 28800, 38400, 56000, 57600, 115200]
+
 menu_data = {
     'title': "GT-511C3 UART", 'type': MENU, 'subtitle': "Please select an option...",
     'options':[
         { 'title': "Initialize", 'type': COMMAND, 'command': 'Initialize' },
         { 'title': "Open", 'type': COMMAND, 'command': 'Open' },
+        { 'title': "Change Baudrate", 'type': MENU, 'subtitle': 'Please select and option...',
+        'options': [ 
+            { 'title': str(x), 'type': COMMAND, 'command': 'ChangeBaudrate(%d)'%x } for x in BAUDRATES
+        ]},
         { 'title': "Blink", 'type': COMMAND, 'command': 'Blink' },
         { 'title': "Enroll Sequence", 'type': COMMAND, 'command': '' },
         { 'title': "All Commands", 'type': MENU, 'subtitle': "Please select an option...", 
@@ -47,7 +53,6 @@ menu_data = {
             { 'title': "Close", 'type': COMMAND, 'command': 'Close' },
             { 'title': "USB Internal Check", 'type': COMMAND, 'command': 'UsbInternalCheck' },
             { 'title': "LED on/off", 'type': COMMAND, 'command': 'CmosLed' },
-            { 'title': "Change Baudrate", 'type': COMMAND, 'command': 'ChangeBaudrate' },
             { 'title': "Get Enroll Count", 'type': COMMAND, 'command': 'GetEnrollCount' },
             { 'title': "Check Enrolled", 'type': COMMAND, 'command': 'CheckEnrolled' },
             { 'title': "Open", 'type': COMMAND, 'command': '' },
@@ -213,11 +218,17 @@ class Commands():
     def ChangeBaudrate(self, *args, **kwargs):
         if not self.open:
             raise NotOpenError('Please, open the port first!')
-        if not (9600 <= args[0] <= 115200):
+        rate = int(args[0])
+        if not (9600 <= rate <= 115200):
             raise ValueError('Incorrect baudrate: ' + str(args[0]))
         reponse = self._f.ChangeBaudrate(args[0])
         if response[0]['ACK']:
-            reponse[1] = response[1].split('; ')
+            self._baudrate = str(rate)
+            self._update_status()
+            return [None, None]
+        else:
+            raise NackError("Couldn't change baudrate - rerun `Open` to identify")
+
 
 
 
