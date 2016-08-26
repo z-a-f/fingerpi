@@ -76,10 +76,10 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
             if status_mid is None:
                 status_mid = ''
                 screen.addstr(rows - mid_status_from_the_bottom, 4, status_mid)
+            else:
                 # Divide in multiple lines + skip 4 columns from both sides
                 # idx = 0 # This makes sure that we don't go below the screen (if dividing the string into rows)
                 #while len(status_mid) > 0 and idx < mid_status_from_the_bottom:
-            else:
                 screen.addstr(rows - mid_status_from_the_bottom + idx, 4, status_mid[:cols - 8])
             
                 #status_mid = status_mid[cols-8:]
