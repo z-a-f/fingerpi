@@ -1,22 +1,24 @@
 import struct 
-import fingerpi as fp
 
 import curses
 
 from time import sleep
 from threading import Timer
 
+from .exceptions import *
+import fingerpi as fp
+
 class RepeatingTimer(object):
     def __init__(self, interval, f, *args, **kwargs):
         self.interval = interval
-        self.f = f
+        self._f = f
         self.args = args
         self.kwargs = kwargs
 
         self.timer = None
 
     def callback(self):
-        self.f(*self.args, **self.kwargs)
+        self._f(*self.args, **self.kwargs)
         self.start()
 
     def cancel(self):
@@ -83,116 +85,140 @@ menu_data = {
 class Commands():
     ## Every method has to return `status` array of size 2
     def __init__(self):
-        self.f = None
-        self.status = 'Uninitialized...'
-        self.open = False
-        self.led = None
+        self._f = None
+        self._status = 'Uninitialized...'
+        self._led = None
+
+        self._open = False
+        self._status_template = r'%s; Baudrate: %s; Firmware ver.: %s; Serial #: %s'
+        self._baudrate = 'N/A'
+        self._firmware = 'N/A'
+        self._serial_no = 'N/A'
+
+    def _update_status():
+        if self._open: 
+            __status = 'Open'
+        else:
+            __status = 'Closed'
+        self._status = self._status_template % (
+            __status,
+            str(self._baudrate),
+            str(self._firmware),
+            str(self._serial_no)
+        )
         
     def Initialize(self, *args):
-        status = 'Initialized'
-        if self.f is not None:
-            return ['Already initialized...', status]
-        self.f = fp.FingerPi(port = port)
+        return [None, None]
+        if self._f is not None:
+            raise AlreadyInitializedError('This device is already initialized')
 
-        if self.f is None:
-            raise Exception('Could not initialize FingerPi()')
-        return ['', status]
+        try:
+            self._f = fp.FingerPi(port = port)
+        except IOError as e:
+            raise PortError(str(e))
+        # self._status = 'Initialized' # Change that to `closed`
+        self._update_status()
+        return ['', None]
 
     def Open(self, *args):
-        if self.open:
-            return ['Already open...', None]
-        ## Bottom status format:
-        # 'Status: Closed' or
-        # 'Status: Open\t`Baudrate`\t`firmware ver.`\t`device serial number`'
-        if self.f is None:
-            raise Exception('Not initialized!')
-            # return ['Error: Please initialize the device first!', None]
-        self.open = True # Show the default status iff NOT initialized!
-        status = [None, None]
-        response = self.f.Open(extra_info = True, check_baudrate = True)
+        if self._open:
+            raise AlreadyOpenError('This device is already open')
+        if self._f is None:
+            raise NotInitializedError('Please, initialize first!')
+
+        response = self._f.Open(extra_info = True, check_baudrate = True)
         if response[0]['ACK']:
             data = struct.unpack('II16B', response[1]['Data'])
-            serial_num = bytearray(data[2:])
-            status[0] = ''
-            status[1] = 'Open; Baudrate: %s; Firmware ver.: %s; Serial #: %s'%(
-                response[0]['Parameter'],
-                data[0],
-                str(serial_num).encode('hex')
-            )
-            self.status = status[1]
-        else:
-            raise Exception('Received NACK')
-        return status
+            # serial_number = bytearray(data[2:])
 
-    def LED(self, *args, **kwargs): # Need screen for popup window
-        if self.led is None:
-            self.led = True
-        else:
-            self.led = not self.led
-        if kwargs.get('led', None) is not None:
-            self.led = kwargs['led']
-        response = self.f.CmosLed(self.led)
-        # response = [{'ACK': True}]
-        if not response[0]['ACK']:
-            raise Exception('Received NACK')
+            self._baudrate = response[0]['Parameter']
+            self._firmware = data[0]
+            self._serial_no = str(bytearray(data[2:])).encode('hex')
 
-        if len(args) > 0:
-            # Screen is given, no point returning
-            args[0].addstr(2, 2, 'LED is set to ' + (' ON' if self.led else 'OFF'))
-            args[0].refresh()
-            return ['', None]
+            self._open = True # Show the default status iff NOT initialized!
+            self._update_status()
         else:
-            return ['LED is set to ' + ('ON' if self.led else 'OFF'), None]
+            raise NackError(response[0]['Parameter'])
+        return [None, None]
 
     def Blink(self, *args):
-        if not self.open:
-            raise Exception('Not open!')
+        if not self._open:
+            raise NotOpenError('Please, open the port first!')
         screen = args[0]
         y, x = screen.getmaxyx()
         screen.border(0)
         screen.addstr(0, 1, 'Press any button to stop...'[:x-2], curses.A_STANDOUT)
 
-        t = RepeatingTimer(0.5, self.LED, screen)
+        t = RepeatingTimer(0.5, self.CmosLed, screen)
         t.start()
 
         screen.refresh()
         inp = screen.getch()
         if inp:
             t.cancel()
-            self.LED(led = False)
-            self.led = False
+            self.CmosLed(led = False)
+            self._led = False
             
         return ['', None]
 
+    ####################################################################
+    ## All (other) commands:
 
-## TODO: Commands in the menu_data?
-def processrequest(menu, *args):
-    global C
-    ## Need screen to show directions!!!
-    scr = args[0]
-    y,x = scr.getmaxyx()
-    screen = scr.derwin(y / 4, x / 2, y * 3 / 4, x / 4)
-    screen.clear()
-    status = [None, None] # 0: Top, 1: Bottom
-    assert menu['type'] == COMMAND
-    # Check if the Commands object is created
-    try:
-        C
-    except:
-        C = Commands()
-    # Run the commands
-    try:
-        status = eval('C.'+menu['command'])(screen) # Give it the subwindow, just in case!
-        # We don't want to change the bottom status that often!
-        if C.open or status[1] == None:
-            status[1] = C.status
-    except Exception as e:
-        # e = sys.exc_info()
-        # raise e
-        # status = '\n\t'.join(map(str, e))
-        # status = 'Error: ' + str(e[1])
-        status = ['Error: (while running ' + menu['title'] + ') ' + str(e), C.status]
+    def Close(self, *args, **kwargs):
+        if not self._open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.Close()
+        if not response[0]['ACK']:
+            raise NackError(response[0]['Parameter'])
+        self._open = False
+        self._update_status()
+        return [None, None]
 
-    status = map(str, status)
-    return status
+    def UsbInternalCheck(self, *args, **kwargs):
+        if not self._open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.UsbInternalCheck()
+        if reponse[0]['ACK']:
+            return ['USB Internal Check returned: ' + str(response[0]['Parameter']), None]
+        else:
+            raise NackError(response[0]['Parameter'])
+
+    def CmosLed(self, *args, **kwargs): # Need screen for popup window
+        # Several modes of operation:
+        # 1) If no argument is given - toggle LED
+        # 2) If named boolean argument `led` is given - set the led to specified value
+        # 3) If positional argument is given - don't return the result, show the result on a separate curses.window
+        if not self._open:
+            raise NotOpenError('Please, open the port first!')
+        if self._led is None:
+            self._led = True
+        else:
+            self._led = not self._led
+
+        if kwargs.get('led', None) is not None:
+            self._led = kwargs['led']
+        response = self._f.CmosLed(self._led)
+        # response = [{'ACK': True}]
+        if response[0]['ACK']:
+            if len(args) > 0:
+                # Screen is given, show a message
+                args[0].addstr(2, 2, 'LED is set to ' + (' ON' if self._led else 'OFF'))
+                args[0].refresh()
+                return ['', None]
+            else:
+                # Screen is not given, return the message
+                return ['LED is set to ' + ('ON' if self._led else 'OFF'), None]
+        else:
+            raise NackError(response[0]['Parameter'])
+
+    def ChangeBaudrate(self, *args, **kwargs):
+        if not self._open:
+            raise NotOpenError('Please, open the port first!')
+        if not (9600 <= args[0] <= 115200):
+            raise ValueError('Incorrect baudrate: ' + str(args[0]))
+        reponse = self._f.ChangeBaudrate(args[0])
+        if response[0]['ACK']:
+            reponse[1] = response[1].split('; ')
+
+
 

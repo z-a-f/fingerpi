@@ -3,7 +3,7 @@
 # The rest of the work was done by Matthew Bennett and he requests you keep these two mentions when you reuse the code :-)
 # Basic code refactoring by Andrew Scheller
 
-#
+## NOTE: We catch UnboundLocalError exceptions in the `processrequest`!!!
 
 ## Usage: curses.wrapper(processmenu,menu_data) # menu_data is the menu data structure
 
@@ -15,7 +15,10 @@ import curses
 # EXITMENU = "exitmenu"
 
 ## processrequest is defined in the `menu_data`
-from .menu_data import processrequest, MENU, COMMAND, EXITMENU
+from .menu_data import MENU, COMMAND, EXITMENU # processrequest, 
+from .menu_data import Commands
+
+from .exceptions import *
 
 # This function displays the appropriate menu and returns the option selected
 def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
@@ -51,7 +54,7 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
             else:
                 oldpos = pos
 
-            screen.border(0)
+            # screen.border(0)
             screen.addstr(2,2, menu['title'], curses.A_STANDOUT) # Title for this menu
             screen.addstr(4,2, menu['subtitle'], curses.A_BOLD) #Subtitle for this menu
 
@@ -68,9 +71,9 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
             screen.addstr(5+optioncount,4, "%d - %s" % (optioncount+1, lastoption), textstyle)
 
             # Add the status of the connection and of the response
+            screen.clrtobot()
+            screen.border(0) # Clear to bottom clears the borders as well :(
             if status_mid is not None:
-                screen.clrtobot()
-                screen.border(0) # Clear to bottom clears the borders as well :(
                 # Divide in multiple lines + skip 4 columns from both sides
                 idx = 0 # This makes sure that we don't go below the screen (if dividing the string into rows)
                 #while len(status_mid) > 0 and idx < mid_status_from_the_bottom:
@@ -85,8 +88,6 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
                 screen.addstr(rows - 1, 4, bot[:cols-8])
             
             #else:
-
-
             screen.refresh()
             # finished updating screen
 
@@ -110,6 +111,44 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
 
     # return index of the selected item
     return pos
+
+## TODO: Commands in the menu_data?
+def processrequest(menu, *args):
+    global C # This will hold the `Commands` object.
+    ## Need screen to show directions!!!
+    scr = args[0]
+    y,x = scr.getmaxyx()
+    screen = scr.derwin(y / 4, x / 2, y * 3 / 4, x / 4)
+    screen.clear()
+    status = [None, None] # 0: Top, 1: Bottom
+    assert menu['type'] == COMMAND
+    # Check if the Commands object is already created
+    try:
+        C
+    except:
+        C = Commands()
+    # Run the commands
+    try:
+        status = eval('C.'+menu['command'])(screen) # Give it the subwindow, just in case!
+        # We don't want to change the bottom status that often!
+        if C.open or status[1] == None:
+            status[1] = C.status
+    # except UnboundLocalError as e:
+    #     # e = sys.exc_info()
+    #     # raise e
+    #     # status = '\n\t'.join(map(str, e))
+    #     # status = 'Error: ' + str(e[1])
+    #     status = ['Error: (while running ' + menu['title'] + ') ' + str(e), C.status]
+    except PortError as e:
+        status = ['Port Error: ' + str(e), C.status]
+    except (AlreadyError, NotYetError) as e:
+        status = ['Error: ' + str(e), C.status]
+    except ValueError as e:
+        status = ['Error: ' + str(e), C.status]
+
+
+    status = map(str, status)
+    return status
 
 # This function calls showmenu and then acts on the selected item
 def processmenu(screen, menu, parent=None, status_bottom = 'Uninitialized...'):
