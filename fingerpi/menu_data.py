@@ -108,7 +108,6 @@ class Commands():
         )
         
     def Initialize(self, *args):
-        return [None, None]
         if self._f is not None:
             raise AlreadyInitializedError('This device is already initialized')
 
