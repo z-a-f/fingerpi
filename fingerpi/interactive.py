@@ -73,14 +73,14 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
             # Add the status of the connection and of the response
             screen.clrtobot()
             screen.border(0) # Clear to bottom clears the borders as well :(
-            if status_mid is None:
+            if status_mid is None or status_mid == 'None':
                 status_mid = ''
                 screen.addstr(rows - mid_status_from_the_bottom, 4, status_mid)
             else:
                 # Divide in multiple lines + skip 4 columns from both sides
                 # idx = 0 # This makes sure that we don't go below the screen (if dividing the string into rows)
                 #while len(status_mid) > 0 and idx < mid_status_from_the_bottom:
-                screen.addstr(rows - mid_status_from_the_bottom + idx, 4, status_mid[:cols - 8])
+                screen.addstr(rows - mid_status_from_the_bottom, 4, status_mid[:cols - 8])
             
                 #status_mid = status_mid[cols-8:]
                 #idx += 1
@@ -133,7 +133,7 @@ def processrequest(menu, *args):
         C = Commands()
     # Run the commands
     try:
-        status = eval('C.'+menu['command'])(screen) # Give it the subwindow, just in case!
+        status = eval('C.'+menu['command'])(screen, **menu['kwargs']) # Give it the subwindow, just in case!
         # We don't want to change the bottom status that often!
         if C.open or status[1] == None:
             status[1] = C.status
@@ -147,9 +147,11 @@ def processrequest(menu, *args):
         status = ['Port Error: ' + str(e), C.status]
     except (AlreadyError, NotYetError) as e:
         status = ['Error: ' + str(e), C.status]
+    except NackError as e:
+        status = ['Not acknoledged: ' + str(e), C.status]
     except ValueError as e:
         status = ['Error: ' + str(e), C.status]
-
+        
 
     status = map(str, status)
     return status

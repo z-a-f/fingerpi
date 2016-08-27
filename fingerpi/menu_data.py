@@ -34,55 +34,38 @@ MENU = "menu"
 COMMAND = "command"
 EXITMENU = "exitmenu"
 
-BAUDRATES = [9600, 14400, 19200, 28800, 38400, 56000, 57600, 115200]
-
+BAUDRATES = [9600,
+             # 14400,
+             19200,
+             # 28800,
+             38400,
+             # 56000,
+             57600,
+             115200]
+## NOTE: `curses.window` is passed as the first argument to every function!
 menu_data = {
     'title': "GT-511C3 UART", 'type': MENU, 'subtitle': "Please select an option...",
     'options':[
-        { 'title': "Initialize", 'type': COMMAND, 'command': 'Initialize' },
-        { 'title': "Open", 'type': COMMAND, 'command': 'Open' },
+        { 'title': "Initialize", 'type': COMMAND, 'command': 'Initialize', 'kwargs':{} },
+        { 'title': "Open", 'type': COMMAND, 'command': 'Open', 'kwargs':{} },
         { 'title': "Change Baudrate", 'type': MENU, 'subtitle': 'Please select and option...',
         'options': [ 
-            { 'title': str(x), 'type': COMMAND, 'command': 'ChangeBaudrate(%d)'%x } for x in BAUDRATES
+            { 'title': str(x), 'type': COMMAND, 'command': 'ChangeBaudrate', 'kwargs': {'baudrate': x} } for x in BAUDRATES
         ]},
-        { 'title': "Blink", 'type': COMMAND, 'command': 'Blink' },
-        { 'title': "Enroll Sequence", 'type': COMMAND, 'command': '' },
+        { 'title': "Blink", 'type': COMMAND, 'command': 'Blink', 'kwargs':{} },
+        { 'title': "Enroll Sequence", 'type': COMMAND, 'command': '', 'kwargs':{} },
         { 'title': "All Commands", 'type': MENU, 'subtitle': "Please select an option...", 
         'options': [
-            { 'title': "Open", 'type': COMMAND, 'command': 'Open' },
-            { 'title': "Close", 'type': COMMAND, 'command': 'Close' },
-            { 'title': "USB Internal Check", 'type': COMMAND, 'command': 'UsbInternalCheck' },
-            { 'title': "LED on/off", 'type': COMMAND, 'command': 'CmosLed' },
-            { 'title': "Get Enroll Count", 'type': COMMAND, 'command': 'GetEnrollCount' },
-            { 'title': "Check Enrolled", 'type': COMMAND, 'command': 'CheckEnrolled' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
-            { 'title': "Open", 'type': COMMAND, 'command': '' },
+            { 'title': "Open", 'type': COMMAND, 'command': 'Open', 'kwargs':{} },
+            { 'title': "Close", 'type': COMMAND, 'command': 'Close', 'kwargs':{} },
+            { 'title': "USB Internal Check", 'type': COMMAND, 'command': 'UsbInternalCheck', 'kwargs':{} },
+            { 'title': "LED on/off", 'type': COMMAND, 'command': 'CmosLed', 'kwargs':{} },
+            { 'title': "Get Enroll Count", 'type': COMMAND, 'command': 'GetEnrollCount', 'kwargs':{} },
+            { 'title': "Check Enrolled", 'type': COMMAND, 'command': 'CheckEnrolled', 'kwargs':{} },
+            { 'title': "Start Enrollment", 'type': COMMAND, 'command': 'EnrollStart', 'kwargs':{} },
+            { 'title': "Open", 'type': COMMAND, 'command': '', 'kwargs':{} },
+            { 'title': "Open", 'type': COMMAND, 'command': '', 'kwargs':{} },
+            { 'title': "Open", 'type': COMMAND, 'command': '', 'kwargs':{} },
         ]},
     ]
 }
@@ -112,7 +95,7 @@ class Commands():
             str(self._serial_no)
         )
         
-    def Initialize(self, *args):
+    def Initialize(self, *args, **kwargs):
         if self._f is not None:
             raise AlreadyInitializedError('This device is already initialized')
 
@@ -122,13 +105,15 @@ class Commands():
             raise PortError(str(e))
         # self._status = 'Initialized' # Change that to `closed`
         self._update_status()
-        return ['', None]
+        return [None, None]
 
-    def Open(self, *args):
+    def Open(self, *args, **kwargs):
         if self.open:
             raise AlreadyOpenError('This device is already open')
         if self._f is None:
             raise NotInitializedError('Please, initialize first!')
+
+        # self._f.serial.reset_input_buffer()
 
         response = self._f.Open(extra_info = True, check_baudrate = True)
         if response[0]['ACK']:
@@ -145,7 +130,7 @@ class Commands():
             raise NackError(response[0]['Parameter'])
         return [None, None]
 
-    def Blink(self, *args):
+    def Blink(self, *args, **kwargs):
         if not self.open:
             raise NotOpenError('Please, open the port first!')
         screen = args[0]
@@ -218,17 +203,94 @@ class Commands():
     def ChangeBaudrate(self, *args, **kwargs):
         if not self.open:
             raise NotOpenError('Please, open the port first!')
-        rate = int(args[0])
+        rate = int(kwargs['baudrate'])
         if not (9600 <= rate <= 115200):
             raise ValueError('Incorrect baudrate: ' + str(args[0]))
-        reponse = self._f.ChangeBaudrate(args[0])
+        response = self._f.ChangeBaudrate(rate)
         if response[0]['ACK']:
             self._baudrate = str(rate)
             self._update_status()
             return [None, None]
         else:
-            raise NackError("Couldn't change baudrate - rerun `Open` to identify")
+            self.open = False
+            self._baudrate = 'Unknown'
+            self._update_status()
+            raise NackError("Couldn't change baudrate: " + str(response[0]['Parameter']))
+
+    def GetEnrollCount(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.GetEnrollCount()
+        if response[0]['ACK']:
+            return ['Number of enrolled fingerprints: ' + str(response[0]['Parameter']), None]
+        else:
+            raise NackError(response[0]['Parameter'])
+
+    def CheckEnrolled(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        screen = args[0]
+        y, x = screen.getmaxyx()
+        # screen.border(0)
+        # screen.addstr(0, 1, 'Enter the ID to check, or empty field to exit...'[:x-2], curses.A_STANDOUT)
+        curses.echo()
+        while True:
+            screen.addstr(2, 2, '>>> ')
+            screen.clrtoeol()
+            screen.border(0)
+            screen.addstr(0, 1, 'Enter the ID to check, or empty field to exit...'[:x-2], curses.A_STANDOUT)
+            ID = screen.getstr(2, 6)
+            if ID.isdigit():
+                response = self._f.CheckEnrolled(int(ID))
+                if response[0]['ACK']:
+                    screen.addstr(3, 2, 'ID in use!')
+                    screen.clrtoeol()
+                else:
+                    screen.addstr(3, 2, response[0]['Parameter'])
+                    screen.clrtoeol()
+            elif ID.isalnum():
+                curses.noecho()
+                raise ValueError('Non-numeric value found!')
+            else:
+                break
+        curses.noecho()
+        return [None, None]
+
+    def EnrollStart(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        screen = args[0]
+        y, x = screen.getmaxyx()
+        # screen.border(0)
+        # screen.addstr(0, 1, 'Enter the ID to check, or empty field to exit...'[:x-2], curses.A_STANDOUT)
+        curses.echo()
+        ret = [False, None]
+        while True: 
+            screen.addstr(2, 2, '>>> ')
+            screen.clrtoeol()
+            screen.border(0)
+            screen.addstr(0, 1, 'Enter a new ID for enrollment, or empty field to cancel...'[:x-2], curses.A_STANDOUT)
+            ID = screen.getstr(2, 6)
+            if ID.isdigit():
+                response = self._f.EnrollStart(int(ID))
+                if response[0]['ACK']:
+                    # screen.addstr(3, 2, 'ID in use!')
+                    # screen.clrtoeol()
+                    ret[0] = 'Enrollment of ID %d started'%response[0]['Parameter']
+                    break
+                else:
+                    screen.addstr(3, 2, response[0]['Parameter'])
+                    screen.clrtoeol()
+            elif ID.isalnum():
+                curses.noecho()
+                raise ValueError('Non-numeric value found!')
+            else:
+                break
+        curses.noecho()
+        return ret
 
 
 
 
+        
+        

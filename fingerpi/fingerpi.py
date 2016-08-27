@@ -135,7 +135,7 @@ class FingerPi():
 
     def EnrollStart(self, ID):
         self.save = ID == -1
-        if self.sendCommand('EnrollStart'):
+        if self.sendCommand('EnrollStart', ID):
             return [self.getResponse(), None]
         else:
             raise RuntimeError("Couldn't send packet")

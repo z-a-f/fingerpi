@@ -84,6 +84,7 @@ def decode_command_packet(packet):
         'Parameter': None,
         'Checksum': None        
     }
+    _debug = packet
     if packet == '': # Nothing to decode
         response['ACK'] = False
         return response
@@ -94,12 +95,16 @@ def decode_command_packet(packet):
     checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
     packet = packet[:-2]
     response['Checksum'] = sum(packet) == checksum # True if checksum is correct
-    
-    packet = struct.unpack(comm_struct(), packet)
+
+    try:
+        packet = struct.unpack(comm_struct(), packet)
+    except Exception as e:
+        raise Exception(str(e) + ' ' + str(packet[0]))
     response['Header'] = hex(packet[0])[2:] + hex(packet[1])[2:]
     response['DeviceID'] = hex(packet[2])[2:]
     response['ACK'] = packet[4] != 0x31 # Not NACK, might be command
-    response['Parameter'] = packet[3] if response['ACK'] else errors[packet[3]]
+    # response['Parameter'] = packet[3] if response['ACK'] else errors[packet[3]]
+    response['Parameter'] = errors(packet[3]) if (not response['ACK'] and packet[3] in errors) else packet[3]
 
     return response
 
