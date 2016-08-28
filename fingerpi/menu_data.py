@@ -456,10 +456,11 @@ class Commands():
                 # Try saving the file
                 try:
                     fl = open(ID, 'w')
-                    fl.write(response[1]['Data'])
+                    fl.write(bytearray(response[1]['Data']))
                     fl.close()
                 except:
                     curses.noecho()
+                    fl.close()
                     raise IOError('Could not write file!')
             else:
                 break
