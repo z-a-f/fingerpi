@@ -25,6 +25,8 @@ class FingerPi():
         self.device_id = device_id
         self.timeout = 5
 
+        self.save = False
+
         self.serial.flushInput()
         self.serial.flushOutput()
 

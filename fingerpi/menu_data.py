@@ -63,9 +63,8 @@ menu_data = {
             { 'title': "Get Enroll Count", 'type': COMMAND, 'command': 'GetEnrollCount', 'kwargs':{} },
             { 'title': "Check Enrolled", 'type': COMMAND, 'command': 'CheckEnrolled', 'kwargs':{} },
             { 'title': "Start Enrollment", 'type': COMMAND, 'command': 'EnrollStart', 'kwargs':{} },
-            { 'title': "Open", 'type': COMMAND, 'command': '', 'kwargs':{} },
-            { 'title': "Open", 'type': COMMAND, 'command': '', 'kwargs':{} },
-            { 'title': "Open", 'type': COMMAND, 'command': '', 'kwargs':{} },
+            { 'title': "Is Finger Pressed?", 'type': COMMAND, 'command': 'IsPressFinger', 'kwargs':{} },
+            { 'title': "Get Image", 'type': COMMAND, 'command': 'GetImage', 'kwargs':{} },
         ]},
     ]
 }
@@ -256,6 +255,19 @@ class Commands():
         curses.noecho()
         return [None, None]
 
+    def IsPressFinger(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.IsPressFinger()
+        if response[0]['ACK']:
+            if response[0]['Parameter'] == 0:
+                # Finger is pressed
+                return [True, None]
+            else:
+                return [False, None]
+        else:
+            raise NackError(response[0]['Parameter'])
+
     def EnrollStart(self, *args, **kwargs):
         if not self.open:
             raise NotOpenError('Please, open the port first!')
@@ -288,6 +300,187 @@ class Commands():
                 break
         curses.noecho()
         return ret
+
+    def Enroll1(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.Enroll1()
+        if not response[0]['ACK']:
+            if response[0]['ACK'] in errors:
+                err = response[0]['ACK']
+            else:
+                err = 'Duplicate ID: ' + str(response[0]['ACK'])
+            raise NackError(err)
+        return [None, None]
+
+    def Enroll2(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.Enroll1()
+        if not response[0]['ACK']:
+            if response[0]['ACK'] in errors:
+                err = response[0]['ACK']
+            else:
+                err = 'Duplicate ID: ' + str(response[0]['ACK'])
+            raise NackError(err)
+        return [None, None]
+
+    def Enroll3(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.Enroll1()
+        if not response[0]['ACK']:
+            if response[0]['ACK'] in errors:
+                err = response[0]['ACK']
+            else:
+                err = 'Duplicate ID: ' + str(response[0]['ACK'])
+            raise NackError(err)
+        if self._f.save:
+            return [str(len(response[1]['Data'])) + ' bytes received... And purged!', None]
+        return [None, None]
+
+    def DeleteID(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        screen = args[0]
+        y, x = screen.getmaxyx()
+        # screen.border(0)
+        # screen.addstr(0, 1, 'Enter the ID to check, or empty field to exit...'[:x-2], curses.A_STANDOUT)
+        curses.echo()
+        ret = [False, None]
+        while True: 
+            screen.addstr(2, 2, '>>> ')
+            screen.clrtoeol()
+            screen.border(0)
+            screen.addstr(0, 1, 'Enter an ID to delete, or empty field to cancel...'[:x-2], curses.A_STANDOUT)
+            ID = screen.getstr(2, 6)
+            if ID.isdigit():
+                response = self._f.DeleteID(int(ID))
+                if response[0]['ACK']:
+                    # screen.addstr(3, 2, 'ID in use!')
+                    # screen.clrtoeol()
+                    ret[0] = 'ID %d deleted'%ID
+                    break
+                else:
+                    screen.addstr(3, 2, response[0]['Parameter'])
+                    screen.clrtoeol()
+            elif ID.isalnum():
+                curses.noecho()
+                raise ValueError('Non-numeric value found!')
+            else:
+                break
+        curses.noecho()
+        return ret
+
+    def DeleteAll(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.DeleteAll()
+        if not response[0]['ACK']:
+            raise NackError(response[0]['Parameter'])
+        return [None, None]
+
+    def Verify(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        screen = args[0]
+        y, x = screen.getmaxyx()
+        # screen.border(0)
+        # screen.addstr(0, 1, 'Enter the ID to check, or empty field to exit...'[:x-2], curses.A_STANDOUT)
+        curses.echo()
+        ret = [False, None]
+        while True: 
+            screen.addstr(2, 2, '>>> ')
+            screen.clrtoeol()
+            screen.border(0)
+            screen.addstr(0, 1, 'Enter an ID to verify, or empty field to cancel...'[:x-2], curses.A_STANDOUT)
+            ID = screen.getstr(2, 6)
+            if ID.isdigit():
+                response = self._f.Verify(int(ID))
+                if response[0]['ACK']:
+                    # screen.addstr(3, 2, 'ID in use!')
+                    # screen.clrtoeol()
+                    ret[0] = 'ID %d verified'%ID
+                    break
+                else:
+                    screen.addstr(3, 2, response[0]['Parameter'])
+                    screen.clrtoeol()
+            elif ID.isalnum():
+                curses.noecho()
+                raise ValueError('Non-numeric value found!')
+            else:
+                break
+        curses.noecho()
+        return ret
+
+    def Identify(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.Identify()
+        if not response[0]['ACK']:
+            raise NackError(response[0]['Parameter'])
+        return [response[0]['Parameter'], None]
+
+    def CaptureFinger(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+
+        best_image = 1
+        if len(args) > 0:
+            best_image = args[0]
+        response = self._f.CaptureFinger(best_image)
+        if not response[0]['ACK']:
+            raise NackError(response[0]['Parameter'])
+        return [None, None]
+
+    def GetImage(self, *args, **kwargs):
+        if not self.open:
+            raise NotOpenError('Please, open the port first!')
+        response = self._f.GetImage()
+        if not response[0]['ACK']:
+            raise NackError(response[0]['Parameter'])
+
+        screen = args[0]
+        y, x = screen.getmaxyx()
+        # screen.border(0)
+        # screen.addstr(0, 1, 'Enter the ID to check, or empty field to exit...'[:x-2], curses.A_STANDOUT)
+        curses.echo()
+        ret = [False, None]
+        while True: 
+            screen.addstr(2, 2, '>>> ')
+            screen.clrtoeol()
+            screen.border(0)
+            screen.addstr(0, 1, 'Enter an the path to save the file to, or empty field to cancel...'[:x-2], curses.A_STANDOUT)
+            ID = screen.getstr(2, 6)
+            if len(ID) > 0:
+                # Try saving the file
+                try:
+                    fl = open(ID, 'w')
+                    fl.write(response[1]['Data'])
+                    fl.close()
+                except:
+                    curses.noecho()
+                    raise IOError('Could not write file!')
+            else:
+                break
+        curses.noecho()
+        return ret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
