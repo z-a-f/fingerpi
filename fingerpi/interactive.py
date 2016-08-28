@@ -149,8 +149,8 @@ def processrequest(menu, *args):
         status = ['Error: ' + str(e), C.status]
     except NackError as e:
         status = ['Not acknoledged: ' + str(e), C.status]
-    except ValueError as e:
-        status = ['Error: ' + str(e), C.status]
+    # except ValueError as e:
+    #    status = ['Error: ' + str(e), C.status]
         
 
     status = map(str, status)

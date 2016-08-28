@@ -5,6 +5,8 @@ import curses
 from time import sleep
 from threading import Timer
 
+import pickle
+
 from .exceptions import *
 import fingerpi as fp
 
@@ -453,15 +455,19 @@ class Commands():
             screen.addstr(0, 1, 'Enter an the path to save the file to, or empty field to cancel...'[:x-2], curses.A_STANDOUT)
             ID = screen.getstr(2, 6)
             if len(ID) > 0:
+                data = response[1]['Data']
                 # Try saving the file
-                try:
-                    fl = open(ID, 'w')
-                    fl.write(bytearray(response[1]['Data']))
-                    fl.close()
-                except:
-                    curses.noecho()
-                    fl.close()
-                    raise IOError('Could not write file!')
+                # try:
+                # fl = open(ID, 'w')
+                # fl.write(response[1]['Data'])
+                # fl.close()
+                # except IOError as e:
+                #     curses.noecho()
+                #     fl.close()
+                #    raise IOError('Could not write file! ' + str(e))
+                with open('ID', 'w') as f:
+                    pickle.dump(data, f)
+                break
             else:
                 break
         curses.noecho()
