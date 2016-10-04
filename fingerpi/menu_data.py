@@ -290,7 +290,7 @@ class Commands():
                 if response[0]['ACK']:
                     # screen.addstr(3, 2, 'ID in use!')
                     # screen.clrtoeol()
-                    ret[0] = 'Enrollment of ID %d started'%response[0]['Parameter']
+                    ret[0] = 'Enrollment of ID {0:d} started'.format(response[0]['Parameter'])
                     break
                 else:
                     screen.addstr(3, 2, response[0]['Parameter'])
@@ -361,7 +361,7 @@ class Commands():
                 if response[0]['ACK']:
                     # screen.addstr(3, 2, 'ID in use!')
                     # screen.clrtoeol()
-                    ret[0] = 'ID %d deleted'%ID
+                    ret[0] = 'ID {0:d} deleted'.format(ID)
                     break
                 else:
                     screen.addstr(3, 2, response[0]['Parameter'])
@@ -402,7 +402,7 @@ class Commands():
                 if response[0]['ACK']:
                     # screen.addstr(3, 2, 'ID in use!')
                     # screen.clrtoeol()
-                    ret[0] = 'ID %d verified'%ID
+                    ret[0] = 'ID {0:d} verified'.format(ID)
                     break
                 else:
                     screen.addstr(3, 2, response[0]['Parameter'])

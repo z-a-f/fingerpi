@@ -32,7 +32,7 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
     if parent is None:
         lastoption = "Exit"
     else:
-        lastoption = "Return to %s menu" % parent['title']
+        lastoption = "Return to {0!s} menu".format(parent['title'])
 
     optioncount = len(menu['options']) # how many options in this menu
 
@@ -63,12 +63,12 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
                 textstyle = n
                 if pos==index:
                     textstyle = h
-                screen.addstr(5+index,4, "%d - %s" % (index+1, menu['options'][index]['title']), textstyle)
+                screen.addstr(5+index,4, "{0:d} - {1!s}".format(index+1, menu['options'][index]['title']), textstyle)
             # Now display Exit/Return at bottom of menu
             textstyle = n
             if pos==optioncount:
                 textstyle = h
-            screen.addstr(5+optioncount,4, "%d - %s" % (optioncount+1, lastoption), textstyle)
+            screen.addstr(5+optioncount,4, "{0:d} - {1!s}".format(optioncount+1, lastoption), textstyle)
 
             # Add the status of the connection and of the response
             screen.clrtobot()
