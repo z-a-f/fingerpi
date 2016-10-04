@@ -1,5 +1,7 @@
 # fingerpi
 
+[![Code Issues](https://www.quantifiedcode.com/api/v1/project/1cbb69065eb748f18b315ddaccad0e12/badge.svg)](https://www.quantifiedcode.com/app/project/1cbb69065eb748f18b315ddaccad0e12)
+
 Python library for GT-511C3. The library was tested on Raspberry Zero.
 
 <img src="demo_code.png" alt="Code" width="300"/>
