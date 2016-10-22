@@ -14,8 +14,10 @@ Python library for GT-511C3. The library was tested on Raspberry Zero.
 R-Pi GPIO pinout: https://pinout.xyz/
 
 ### Raspberry Pi Zero (40 pin, 3.3 V IOs)
+I used optional resistors in case there is [another FTDI connection](http://www.billporter.info/2011/06/26/how-to-add-multiple-uart-connections/)
+
 ```
-                       Optional
+                       (Optional)
 ----------------------   1kOhm    ------------------------
 GT-511C3     Tx (1)--|----/\/\----|--(10) RxD   R-Pi Zero
              Rx (2)--|----/\/\----|--(8)  TxD
