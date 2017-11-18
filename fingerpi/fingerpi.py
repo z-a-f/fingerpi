@@ -155,7 +155,7 @@ class FingerPi():
             raise RuntimeError("Couldn't send packet")
 
     def Enroll3(self):
-        if self.sendCommand('GetEnrollCount'):
+        if self.sendCommand('Enroll3'):
             response = self.getResponse()
         else:
             raise RuntimeError("Couldn't send packet")
