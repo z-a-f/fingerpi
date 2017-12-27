@@ -1,7 +1,6 @@
-
 import struct
-from .structure import *
 
+from .structure import *
 
 """
 Command Packet:
@@ -92,6 +91,8 @@ def decode_command_packet(packet):
     if packet[0] == packets['Data1'] and packet[1] == packets['Data2']:
         return decode_data_packet(packet)
     # Strip the checksum and get the values out
+    if len(packet[-2:]) < 2:
+        raise Exception("Received packet doesn't have a checksum! Check your connection!")
     checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
     packet = packet[:-2]
     response['Checksum'] = sum(packet) == checksum # True if checksum is correct
@@ -123,6 +124,8 @@ def decode_data_packet(packet):
         return decode_command_packet(packet)
     
     # Strip the checksum and get the values out
+    if len(packet[-2:]) < 2:
+        raise Exception("Received packet doesn't have a checksum! Check your connection!")
     checksum = sum(struct.unpack(checksum_struct(), packet[-2:])) # Last two bytes are checksum
     packet = packet[:-2]
     # Data sum might be larger than the checksum field:
@@ -131,8 +134,10 @@ def decode_data_packet(packet):
     response['Checksum'] = chk == checksum # True if checksum is correct
     
     data_len = len(packet) - 4 # Exclude the header (2) and device ID (2)
-
-    packet = struct.unpack(data_struct(data_len), packet)
+    try:
+        packet = struct.unpack(data_struct(data_len), packet)
+    except Exception as e:
+        raise Exception(str(e) + ' Cannot decode packet ' + packet[0])
     response['Header'] = hex(packet[0])[2:] + hex(packet[1])[2:]
     response['DeviceID'] = hex(packet[2])[2:]
     response['Data'] = packet[3]

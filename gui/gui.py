@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import Tkinter as tk
 from PIL import ImageTk, Image
@@ -262,8 +262,6 @@ class App:
     self.button_get_live_image = tk.Button(self.master, text = 'Get Live Image', callback=callback_get_live_image)
 """
         
-
-
 if __name__ == '__main__':
     root = tk.Tk()
 

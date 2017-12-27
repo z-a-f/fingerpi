@@ -25,6 +25,7 @@ class AlreadyOpenError(AlreadyError):
     """If trying to open the device that is already open"""
     def __init__(self, *args, **kwargs):
         AlreadyError.__init__(self, *args, **kwargs)
+        
 ################################################################################
 # Cases when trying to use variables that are not yet created
 class NotYetError(RuntimeError):

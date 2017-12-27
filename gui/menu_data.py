@@ -1,13 +1,11 @@
 import struct 
-
 import curses
+import pickle
 
 from time import sleep
 from threading import Timer
 
-import pickle
-
-from .exceptions import *
+from fingerpi.exceptions import *
 import fingerpi as fp
 
 class RepeatingTimer(object):

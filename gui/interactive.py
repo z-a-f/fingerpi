@@ -1,4 +1,3 @@
-
 # Topmenu and the submenus are based of the example found at this location http://blog.skeltonnetworks.com/2010/03/python-curses-custom-menu/
 # The rest of the work was done by Matthew Bennett and he requests you keep these two mentions when you reuse the code :-)
 # Basic code refactoring by Andrew Scheller
@@ -18,7 +17,7 @@ import curses
 from .menu_data import MENU, COMMAND, EXITMENU # processrequest, 
 from .menu_data import Commands
 
-from .exceptions import *
+from fingerpi.exceptions import *
 
 # This function displays the appropriate menu and returns the option selected
 def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):

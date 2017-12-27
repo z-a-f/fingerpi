@@ -1,5 +1,3 @@
-
-
 """
 Command Packet:
 OFFSET  ITEM        TYPE    DESCRIPTION

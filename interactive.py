@@ -1,12 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 import os
 import curses #curses is the interface for capturing key presses on the menu, os launches the files
 
 import fingerpi as fp
-from fingerpi.interactive import processmenu
-from fingerpi.menu_data import *
+from gui.interactive import processmenu
+from gui.menu_data import *
 
 # Main program
 curses.wrapper(processmenu,menu_data) # For the error handling
