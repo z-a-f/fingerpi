@@ -45,7 +45,7 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
     # response_status = ''
 
     # Loop until return key is pressed
-    while x !=ord('\n'):
+    while x != ord('\n'):
         if pos != oldpos or x == curses.KEY_RESIZE: # In case window is resized, redraw everything!
             if x == curses.KEY_RESIZE: 
                 screen.clear() # Clear borders and stuff!
@@ -107,16 +107,12 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
             if pos > 0:
                 pos += -1
             else: pos = optioncount
-        # elif x == curses.KEY_RESIZE:
-        #     # raise NotImplementedError('Resizing is not implemented yet - sorry, will get to it eventually!')
-        #     screen.refresh()
-        #     rows, cols = screen.getmaxyx()
 
     # return index of the selected item
     return pos
 
 ## TODO: Commands in the menu_data?
-def processrequest(menu, *args):
+def processrequest(menu, *args, **kwargs):
     global C # This will hold the `Commands` object.
     ## Need screen to show directions!!!
     scr = args[0]
@@ -136,27 +132,18 @@ def processrequest(menu, *args):
         # We don't want to change the bottom status that often!
         if C.open or status[1] == None:
             status[1] = C.status
-    # except UnboundLocalError as e:
-    #     # e = sys.exc_info()
-    #     # raise e
-    #     # status = '\n\t'.join(map(str, e))
-    #     # status = 'Error: ' + str(e[1])
-    #     status = ['Error: (while running ' + menu['title'] + ') ' + str(e), C.status]
     except PortError as e:
         status = ['Port Error: ' + str(e), C.status]
     except (AlreadyError, NotYetError) as e:
         status = ['Error: ' + str(e), C.status]
     except NackError as e:
-        status = ['Not acknoledged: ' + str(e), C.status]
-    # except ValueError as e:
-    #    status = ['Error: ' + str(e), C.status]
-        
+        status = ['Not acknowledged: ' + str(e), C.status]        
 
     status = map(str, status)
     return status
 
 # This function calls showmenu and then acts on the selected item
-def processmenu(screen, menu, parent=None, status_bottom = 'Uninitialized...'):
+def processmenu(screen, menu, parent=None, status_bottom = 'Uninitialized...', *args, **kwargs):
     curses.init_pair(1,curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.curs_set(0)
     status_mid = ''
@@ -172,10 +159,12 @@ def processmenu(screen, menu, parent=None, status_bottom = 'Uninitialized...'):
             status_mid, status_bottom = processrequest(menu['options'][getin], screen) # Add additional space
             ## Show the updated status
             screen.clear() #clears previous screen on key press and updates display based on pos
+            if menu['options'][getin].get('exit', None): # Exit on select
+                exitmenu = True
         elif menu['options'][getin]['type'] == MENU:
             screen.clear() #clears previous screen on key press and updates display based on pos
-            processmenu(screen, menu['options'][getin], menu, status_bottom) # display the submenu, and make sure the status is persistent
+            status_mid, status_bottom = processmenu(screen, menu['options'][getin], menu, status_bottom) # display the submenu, and make sure the status is persistent
             screen.clear() #clears previous screen on key press and updates display based on pos
         elif menu['options'][getin]['type'] == EXITMENU:
             exitmenu = True
-
+    return status_mid, status_bottom

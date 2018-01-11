@@ -1,6 +1,6 @@
-import struct 
 import curses
 import pickle
+import struct
 
 from time import sleep
 from threading import Timer
@@ -28,7 +28,37 @@ class RepeatingTimer(object):
         self.timer = Timer(self.interval, self.callback)
         self.timer.start()
 
-port = '/dev/ttyAMA0'
+def _serial_ports():
+    import glob
+    import serial
+    import sys
+
+    default_port = '/dev/ttyAMA0'
+
+    if sys.platform.startswith('win'):
+        ports = ['COM%s' % (i + 1) for i in range(256)]
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        # this excludes your current terminal "/dev/tty"
+        ports = glob.glob('/dev/tty[A-Za-z0-9]*')
+    elif sys.platform.startswith('darwin'):
+        ports = glob.glob('/dev/tty.*')
+    else:
+        raise EnvironmentError('Unsupported platform')
+
+    result = []
+    for port in ports:
+        try:
+            s = serial.Serial(port)
+            s.close()
+            result.append([str(port), port, False]) # Message, Port, Default port?
+        except (OSError, serial.Exception):
+            print "(!) Cannot open " + str(port)
+            pass # We are just checking the ports!
+    if not result:
+        return [["No ports can be opened! Try using the default(" + default_port + ")?", default_port, True]]
+    return result
+
+ports = _serial_ports()
         
 MENU = "menu"
 COMMAND = "command"
@@ -42,11 +72,16 @@ BAUDRATES = [9600,
              # 56000,
              57600,
              115200]
+
 ## NOTE: `curses.window` is passed as the first argument to every function!
 menu_data = {
     'title': "GT-511C3 UART", 'type': MENU, 'subtitle': "Please select an option...",
     'options':[
-        { 'title': "Initialize", 'type': COMMAND, 'command': 'Initialize', 'kwargs':{} },
+        # { 'title': "Initialize", 'type': COMMAND, 'command': 'Initialize', 'kwargs':{} },
+        { 'title': "Initialize", 'type': MENU, 'subtitle': 'Please, select the correct UART port...', 
+        'options': [
+            { 'title': msg, 'type': COMMAND, 'command': 'Initialize', 'exit': True, 'kwargs': {'port': port, 'default': default} } for msg, port, default in ports
+        ]},
         { 'title': "Open", 'type': COMMAND, 'command': 'Open', 'kwargs':{} },
         { 'title': "Change Baudrate", 'type': MENU, 'subtitle': 'Please select and option...',
         'options': [ 
@@ -77,6 +112,7 @@ class Commands():
         self._led = None
 
         self.open = False
+        self.port = None
         self._status_template = r'%s; Baudrate: %s; Firmware ver.: %s; Serial #: %s'
         self._baudrate = 'N/A'
         self._firmware = 'N/A'
@@ -93,18 +129,23 @@ class Commands():
             str(self._firmware),
             str(self._serial_no)
         )
-        
+
     def Initialize(self, *args, **kwargs):
+        self.port = kwargs['port']
+        message = None
+        if kwargs['default']:
+            message = "I could not find any usable port! Will try the default: "+\
+                      str(self.port)
+
         if self._f is not None:
             raise AlreadyInitializedError('This device is already initialized')
-
         try:
-            self._f = fp.FingerPi(port = port)
+            self._f = fp.FingerPi(port = self.port)
         except IOError as e:
             raise PortError(str(e))
-        # self._status = 'Initialized' # Change that to `closed`
+
         self._update_status()
-        return [None, None]
+        return [message, "Using " + self.port]
 
     def Open(self, *args, **kwargs):
         if self.open:
@@ -112,12 +153,9 @@ class Commands():
         if self._f is None:
             raise NotInitializedError('Please, initialize first!')
 
-        # self._f.serial.reset_input_buffer()
-
         response = self._f.Open(extra_info = True, check_baudrate = True)
         if response[0]['ACK']:
             data = struct.unpack('II16B', response[1]['Data'])
-            # serial_number = bytearray(data[2:])
 
             self._baudrate = response[0]['Parameter']
             self._firmware = data[0]
@@ -471,24 +509,3 @@ class Commands():
         curses.noecho()
         return ret
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        
