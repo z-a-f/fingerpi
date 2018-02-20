@@ -45,6 +45,15 @@ GT-511C3     Tx (1)--|-----------------|--(10) RxD   R-Pi
 
 Run `demo.py` for a demo
 
+## Troubleshooting
+
+If you are stuck at `Opening connection...`, as described out by @Ankush-Pathak in #19:
+
+> - Do "sudo nano /boot/config.txt" via ssh or by opening a terminal on the pi.
+> - Scroll down to the end of the file using arrow keys, on a new line add "dtoverlay=pi3-disable-bt".
+> - Then do ctrl + o, return(saves your file), ctrl + x(exits nano).
+> - Reboot.
+> - If this does not work, many people also suggested changing the modes of the required GPIO pins to ALT0 or ALT5. You could try that too.
 ## TODO
 - Documentation
 - Unit tests
