@@ -58,7 +58,7 @@ commands = {
                                 #    Merge three templates into one template,
                                 #    save merged template to the database 
     'IsPressFinger':    0x26,   # Check if a finger is placed on the sensor
-    'DeleteID':         0x40,   # Delete the fingerprint with the specified ID
+    'DeleteId':         0x40,   # Delete the fingerprint with the specified ID
     'DeleteAll':        0x41,   # Delete all fingerprints from the database
     'Verify':           0x50,   # 1:1 Verification of the capture fingerprint image with the specified ID
     'Identify':         0x51,   # 1:N Identification of the capture fingerprint image with the database
