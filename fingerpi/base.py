@@ -78,7 +78,7 @@ def encode_data_packet(
 def decode_command_packet(packet):
     response = {
         'Header': None,
-        'DeviceID': None,
+        'DeviceId': None,
         'ACK': None,
         'Parameter': None,
         'Checksum': None        
