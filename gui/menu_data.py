@@ -73,6 +73,7 @@ BAUDRATES = [9600,
              57600,
              115200]
 
+NOT_IMPLEMENTED = 'NOT IMPLEMENTED'
 ## NOTE: `curses.window` is passed as the first argument to every function!
 menu_data = {
     'title': "GT-511C3 UART", 'type': MENU, 'subtitle': "Please select an option...",
@@ -88,7 +89,7 @@ menu_data = {
             { 'title': str(x), 'type': COMMAND, 'command': 'ChangeBaudrate', 'kwargs': {'baudrate': x} } for x in BAUDRATES
         ]},
         { 'title': "Blink", 'type': COMMAND, 'command': 'Blink', 'kwargs':{} },
-        { 'title': "Enroll Sequence", 'type': COMMAND, 'command': '', 'kwargs':{} },
+        { 'title': "Enroll Sequence", 'type': COMMAND, 'command': NOT_IMPLEMENTED, 'kwargs':{} },
         { 'title': "All Commands", 'type': MENU, 'subtitle': "Please select an option...", 
         'options': [
             { 'title': "Open", 'type': COMMAND, 'command': 'Open', 'kwargs':{} },

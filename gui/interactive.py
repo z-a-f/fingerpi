@@ -16,8 +16,20 @@ import curses
 ## processrequest is defined in the `menu_data`
 from .menu_data import MENU, COMMAND, EXITMENU # processrequest, 
 from .menu_data import Commands
+from .menu_data import NOT_IMPLEMENTED
 
 from fingerpi.exceptions import *
+
+# Hack to avoid curses to break when window is resized.
+def curses_addstr(scr, *args, **kwargs):
+    try:
+        # This will break if the window is resized!"
+        scr.addstr(*args, **kwargs)
+    except curses.error as e:
+        print("(E) There was an error with curses: " + str(e))
+        print("(I) Most probably because the options don't fit on the screen!")
+        print("(I) This program doesn't support vertical scrolling!")
+        pass
 
 # This function displays the appropriate menu and returns the option selected
 def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
@@ -54,32 +66,33 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
                 oldpos = pos
 
             # screen.border(0)
-            screen.addstr(2,2, menu['title'], curses.A_STANDOUT) # Title for this menu
-            screen.addstr(4,2, menu['subtitle'], curses.A_BOLD) #Subtitle for this menu
+            curses_addstr(screen, 2,2, menu['title'], curses.A_STANDOUT) # Title for this menu
+            curses_addstr(screen, 4,2, menu['subtitle'], curses.A_BOLD) #Subtitle for this menu
 
             # Display all the menu items, showing the 'pos' item highlighted
             for index in range(optioncount):
                 textstyle = n
                 if pos==index:
                     textstyle = h
-                screen.addstr(5+index,4, "{0:d} - {1!s}".format(index+1, menu['options'][index]['title']), textstyle)
+                # This will break if the window is resized!"
+                curses_addstr(screen, 5+index, 4, "{0:d} - {1!s}".format(index+1, menu['options'][index]['title']), textstyle)
             # Now display Exit/Return at bottom of menu
             textstyle = n
             if pos==optioncount:
                 textstyle = h
-            screen.addstr(5+optioncount,4, "{0:d} - {1!s}".format(optioncount+1, lastoption), textstyle)
+            curses_addstr(screen, 5+optioncount, 4, "{0:d} - {1!s}".format(optioncount+1, lastoption), textstyle)
 
             # Add the status of the connection and of the response
             screen.clrtobot()
             screen.border(0) # Clear to bottom clears the borders as well :(
             if status_mid is None or status_mid == 'None':
                 status_mid = ''
-                screen.addstr(rows - mid_status_from_the_bottom, 4, status_mid)
+                curses_addstr(screen, rows - mid_status_from_the_bottom, 4, status_mid)
             else:
                 # Divide in multiple lines + skip 4 columns from both sides
                 # idx = 0 # This makes sure that we don't go below the screen (if dividing the string into rows)
                 #while len(status_mid) > 0 and idx < mid_status_from_the_bottom:
-                screen.addstr(rows - mid_status_from_the_bottom, 4, status_mid[:cols - 8])
+                curses_addstr(screen, rows - mid_status_from_the_bottom, 4, status_mid[:cols - 8])
             
                 #status_mid = status_mid[cols-8:]
                 #idx += 1
@@ -88,7 +101,7 @@ def runmenu(screen, menu, parent, status_mid = '', status_bottom = ''):
                 screen.clrtoeol()
                 screen.border(0) # Clear to bottom clears the borders as well :(
                 bot = 'Status: ' + status_bottom
-                screen.addstr(rows - 1, 4, bot[:cols-8])
+                curses_addstr(screen, rows - 1, 4, bot[:cols-8])
             
             #else:
             screen.refresh()
@@ -128,16 +141,23 @@ def processrequest(menu, *args, **kwargs):
         C = Commands()
     # Run the commands
     try:
-        status = eval('C.'+menu['command'])(screen, **menu['kwargs']) # Give it the subwindow, just in case!
-        # We don't want to change the bottom status that often!
-        if C.open or status[1] == None:
-            status[1] = C.status
+        if menu['command'] == NOT_IMPLEMENTED:
+            status = ['Implementation Error: This option is not yet implemented', C.status]
+        else:
+            status = eval('C.'+menu['command'])(screen, **menu['kwargs']) # Give it the subwindow, just in case!
+            # We don't want to change the bottom status that often!
+            if C.open or status[1] == None:
+                status[1] = C.status
     except PortError as e:
         status = ['Port Error: ' + str(e), C.status]
     except (AlreadyError, NotYetError) as e:
         status = ['Error: ' + str(e), C.status]
     except NackError as e:
-        status = ['Not acknowledged: ' + str(e), C.status]        
+        status = ['Not acknowledged: ' + str(e), C.status]
+    except SyntaxError as e:
+        status = ['Could not parse menu command: ' + menu['command'] + ' ' + str(e), C.status]
+    except RuntimeError as e:
+        status = ['Unknown error: ' + str(e), C.status]
 
     status = map(str, status)
     return status
