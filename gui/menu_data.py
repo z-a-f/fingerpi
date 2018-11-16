@@ -205,7 +205,7 @@ class Commands():
         if not self.open:
             raise NotOpenError('Please, open the port first!')
         response = self._f.UsbInternalCheck()
-        if reponse[0]['ACK']:
+        if response[0]['ACK']:
             return ['USB Internal Check returned: ' + str(response[0]['Parameter']), None]
         else:
             raise NackError(response[0]['Parameter'])
