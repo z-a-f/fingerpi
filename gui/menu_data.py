@@ -51,7 +51,7 @@ def _serial_ports():
             s = serial.Serial(port)
             s.close()
             result.append([str(port), port, False]) # Message, Port, Default port?
-        except (OSError, serial.Exception):
+        except (OSError, serial.SerialException):
             print "(!) Cannot open " + str(port)
             pass # We are just checking the ports!
     if not result:
